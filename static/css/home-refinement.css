@@ -1,0 +1,89 @@
+/* Homepage-only refinements; other sections keep their existing layout. */
+.home-page .profile-heading { margin-bottom: 1.5rem; }
+.home-page .mobile-profile-visual {
+    aspect-ratio: 16 / 10;
+    max-height: 300px;
+}
+.home-page .mobile-profile-visual img { object-position: 70% 43%; }
+.home-page .bio-view-header { margin: 1.5rem 0 1.25rem; }
+.home-page .world-section { margin-top: 3rem; }
+.home-page .content-section { margin-top: 2.5rem; }
+.home-page .notes-section {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--divider);
+}
+.home-page .content-stack > .content-section:first-child { margin-top: 0; }
+.home-page .content-section h2,
+.home-page .dream-section-title { margin-bottom: 0.85rem; }
+.home-page .entry-caption {
+    color: var(--nav);
+    font: 0.75rem/1.5 var(--ui-font);
+    font-weight: 400;
+    letter-spacing: 0;
+}
+.home-page .notes-grid .entry-caption { display: block; margin-top: 0.25rem; }
+.home-page .dream-entry-row .entry-caption { margin-left: 0.6rem; display: inline-block; }
+.home-page #tools .index-row,
+.home-page #media .index-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    padding-block: 1rem;
+}
+.home-page #tools .row-copy small { margin-top: 0.3rem; }
+.home-page #tools .row-meta { white-space: nowrap; }
+.home-page .profile-contact {
+    margin-top: 3.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--divider);
+}
+.home-page .contact-invitation {
+    margin: 0 0 1.5rem;
+    color: var(--secondary);
+    font-size: 0.95rem;
+    line-height: 1.85;
+}
+.home-page .contact-strip { border: 0; }
+.home-page .contact-strip .index-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    overflow-wrap: anywhere;
+}
+.home-page .home-footer { margin-top: 2.5rem; border-top: 0; }
+.home-page .footer-stats { font-size: 0.7rem; }
+
+@media (min-width: 640px) and (max-width: 1099px) {
+    .home-page .profile-heading {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 170px;
+        gap: 2rem;
+        align-items: center;
+    }
+    .home-page .site-title { padding-right: 0; font-size: 2.25rem; }
+    .home-page .name-divider { display: none; }
+    .home-page .name-zh { display: block; margin-top: 0.3rem; }
+    .home-page .mobile-profile-visual { aspect-ratio: 1; margin-top: 0; }
+}
+
+@media (min-width: 1100px) {
+    .home-page .home-layout {
+        max-width: 1120px;
+        grid-template-columns: minmax(500px, 600px) minmax(280px, 380px);
+        column-gap: 4rem;
+        margin-inline: calc((600px - min(100cqi, 1120px)) / 2);
+    }
+    .home-page .home-visual {
+        height: min(480px, 65svh);
+        min-height: 0;
+        margin-top: 0;
+        top: 96px;
+    }
+    .home-page .home-visual-image { object-position: 70% 43%; }
+}
+
+@media (max-width: 639px) {
+    .home-page main.site-shell { padding-top: 1.5rem; }
+    .home-page .world-section { margin-top: 2.5rem; }
+    .home-page .notes-grid { grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .home-page .profile-contact { margin-top: 3rem; }
+}
