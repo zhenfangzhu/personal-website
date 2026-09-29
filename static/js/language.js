@@ -37,7 +37,8 @@
             const label = nextLanguage === "zh" ? "选择语言" : "Choose language";
             button.setAttribute("aria-label", label);
             button.title = label;
-            button.textContent = nextLanguage === "zh" ? "中文 ▾" : "EN ▾";
+            const text = nextLanguage === "zh" ? "中文" : "EN";
+            button.textContent = button.closest(".language-picker--home") ? text : `${text} ▾`;
         });
         document.querySelectorAll("[data-language-option]").forEach((option) => {
             option.setAttribute("aria-checked", String(option.dataset.languageOption === nextLanguage));

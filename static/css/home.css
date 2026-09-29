@@ -734,3 +734,74 @@ a.index-row {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* A quiet text control matching the homepage masthead. */
+.site-chrome .language-picker--home .language-toggle {
+    min-width: 64px;
+    gap: 9px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 4px;
+    color: var(--nav);
+    font: 12px/1.4 var(--ui-font);
+    letter-spacing: 0.04em;
+}
+
+.site-chrome .language-picker--home .language-toggle::after {
+    content: "";
+    width: 5px;
+    height: 5px;
+    margin-top: -3px;
+    border-right: 1px solid currentColor;
+    border-bottom: 1px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform 160ms ease;
+}
+
+.site-chrome .language-picker--home .language-toggle:hover,
+.site-chrome .language-picker--home .language-toggle[aria-expanded="true"] {
+    color: var(--ink);
+    background: var(--surface);
+}
+
+.site-chrome .language-picker--home .language-toggle[aria-expanded="true"]::after {
+    margin-top: 3px;
+    transform: rotate(225deg);
+}
+
+.site-chrome .language-picker--home .language-menu {
+    top: calc(100% + 4px);
+    width: 136px;
+    padding: 4px;
+    border: 1px solid var(--divider);
+    border-radius: 6px;
+    background: var(--page);
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--menu-shadow) 65%, transparent);
+}
+
+.site-chrome .language-picker--home .language-menu a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: var(--nav);
+    font-size: 12px;
+}
+
+.site-chrome .language-picker--home .language-menu a:hover,
+.site-chrome .language-picker--home .language-menu a:focus-visible {
+    color: var(--ink);
+    background: var(--surface);
+}
+
+.site-chrome .language-picker--home .language-menu a[aria-checked="true"] {
+    color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-chrome .language-picker--home .language-toggle,
+    .site-chrome .language-picker--home .language-toggle::after {
+        transition: none;
+    }
+}
