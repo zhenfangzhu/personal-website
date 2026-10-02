@@ -100,7 +100,8 @@ begin
         where b.room_id = p_room_id and b.revision = p_expected_revision and b.expires_at > now();
     end if;
     if not found then
-        raise exception 'private_board_conflict' using errcode = '40001';
+        -- Business conflicts must return once; PostgREST 14 retries serialization_failure indefinitely.
+        raise sqlstate 'PT409' using message = 'private_board_conflict';
     end if;
     return query select v_revision, v_expires_at;
 end;

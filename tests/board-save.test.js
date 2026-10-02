@@ -402,7 +402,7 @@ function sharedPrivateRoom(initial) {
         async save(parameters) {
             writes.push(parameters);
             if (parameters.p_expected_revision !== record.revision) {
-                return { error: { code: "40001", message: "private_board_conflict" } };
+                return { error: { code: "PT409", message: "private_board_conflict" } };
             }
             record = { ...record, ciphertext: parameters.p_ciphertext, iv: parameters.p_iv, salt: parameters.p_salt, revision: revision(++sequence) };
             return { data: [{ revision: record.revision, expires_at: record.expires_at }], error: null };
@@ -467,7 +467,7 @@ test("a merge also checks its displayed revision if the room changes again", asy
 test("a conflict with a temporarily unreadable latest version keeps the draft and can reload", async () => {
     const board = await setup();
     await board.openPrivate();
-    board.service.savePrivate = async () => ({ error: { code: "40001" } });
+    board.service.savePrivate = async () => ({ error: { code: "PT409" } });
     board.service.readPrivate = async () => { throw new Error("Offline"); };
     board.input("private-board-editor", "Preserve me");
     await board.tick();
@@ -574,4 +574,19 @@ test("real AES-GCM accepts the full 20,000-character Chinese and worst JSON-esca
         assert.equal(board.get("private-save-recovery").hidden, true);
         assert.equal(board.leave().defaultPrevented, false);
     }
+});
+
+
+test("a legacy returned 40001 conflict still preserves the draft during a service rollout", async () => {
+    const board = await setup();
+    await board.openPrivate();
+    board.service.savePrivate = async () => ({ error: { code: "40001", message: "private_board_conflict" } });
+    board.service.readPrivate = async () => ({ data: { ...board.record, revision: revision(2), ciphertext: Buffer.from(JSON.stringify({ version: 1, content: "Other person's saved text" })).toString("base64") } });
+    board.input("private-board-editor", "My unsaved text");
+    await board.tick();
+    assert.equal(board.get("private-board-editor").value, "My unsaved text");
+    assert.equal(board.get("private-latest-editor").value, "Other person's saved text");
+    assert.equal(board.get("private-conflict-recovery").hidden, false);
+    assert.equal(board.get("retry-private-save").disabled, true);
+    assert.equal(board.leave().defaultPrevented, true);
 });

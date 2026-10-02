@@ -140,6 +140,9 @@ class SiteContractTests(unittest.TestCase):
         self.assertIn('.rpc("read_private_board_versioned"', board_js)
         self.assertIn("p_expected_revision: privateRevision", board_js)
         self.assertIn("b.revision = p_expected_revision", schema)
+        # PostgREST 14 retries 40001 instead of returning a business version conflict.
+        self.assertIn("raise sqlstate 'PT409' using message = 'private_board_conflict'", schema)
+        self.assertNotIn("errcode = '40001'", schema)
         self.assertIn("revoke all on function public.save_private_board(text, text, text, text, integer) from public, anon, authenticated", schema)
         self.assertNotIn("p_password", board_js)
         self.assertNotIn("localStorage", board_js)

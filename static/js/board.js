@@ -519,7 +519,7 @@
             if (isCurrentRoom()) {
                 privateDirty = true;
                 privateSaveFailed = true;
-                if (error?.code === "40001") {
+                if (error?.code === "PT409" || error?.code === "40001") {
                     privateConflict = true;
                     privateSaveIssue = "board.conflictRecovery";
                     setPrivateSaveStatus("status.privateConflict");
