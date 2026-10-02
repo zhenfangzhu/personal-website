@@ -115,3 +115,57 @@ These tests do not submit URLs or read platform accounts. After publishing,
 confirm Pages succeeds, the notification starts afterwards, and its checkout SHA
 matches the Pages run. Check the live sitemap and use platform reports to track
 actual indexing; do not interpret an Actions success as proof of search inclusion.
+
+## Other search engines: public-entry review on 2026-10-03
+
+This review checked official public documentation and entry points. It did not
+register accounts, send application emails, or directly submit the site to 360,
+Sogou, or Shenma. Their current account login, verification, submission permissions
+and quotas still need to be checked in the browser before recording a submission
+result. Some public help documents are older; their availability alone does not
+establish that this site's account has access to a tool.
+
+| Engine | Confirmed discovery route and limits |
+| --- | --- |
+| Yandex and Seznam | Both participate in IndexNow. A notification to the global endpoint is shared with participating engines, so the existing workflow covers this notification channel without duplicate per-engine requests. This is not proof that either engine indexed the URLs. See the [IndexNow participant list and sharing rules](https://www.indexnow.org/faq) and [Yandex's IndexNow guide](https://yandex.com/support/webmaster/en/indexing-options/index-now). |
+| DuckDuckGo | Most ordinary links and images are sourced from Bing, but DuckDuckGo also has its own crawler and indexes. Bing submission addresses its main source; it does not establish complete synchronization or a separate DuckDuckGo submission receipt. See [DuckDuckGo's result sources](https://duckduckgo.com/duckduckgo-help-pages/results/sources). |
+| Yahoo Search | Yahoo's public help directs website submissions to Bing Webmaster Tools. A separate Yahoo submission channel is unnecessary for the Yahoo Search service described in this guide. See [Yahoo's submission instructions](https://hk.help.yahoo.com/kb/SLN2217.html). |
+| 360 Search | The [official webmaster platform](https://zhanzhang.so.com/) requires a 360 account and site-ownership verification before its data-submission tools can be used. The [website inclusion entry](https://info.so.com/site_submit.html) also redirected to the official 360 login during this review. No direct submission was made; inspect the existing account and its permissions first. See [360's platform introduction](https://www.so.com/help/help_3_16.html) and [verification help](https://www.so.com/help/help_3_8.html). |
+| Sogou | The [official resource platform](https://zhanzhang.sogou.com/) requires login and website verification. Its public [sitemap instructions](https://zhanzhang.sogou.com/index.php/help/sitemap) still describe invitation-based access, so a verified account does not by itself establish permission to submit a sitemap. No direct submission or invitation request was made. |
+| Shenma | The [official webmaster platform](https://zhanzhang.sm.cn/) publishes login, verification and sitemap tools. Inspect the site's account permissions before using them. No direct submission was made. See [platform help](https://zhanzhang.sm.cn/open/help) and [sitemap instructions](https://zhanzhang.sm.cn/open/helpsitemap). |
+| Quark | This review did not confirm a separate public website/sitemap submission interface or an official guarantee that Shenma submissions synchronize to Quark. The [Quark product site](https://www.quark.cn/) provides product and feedback information; a feedback form is not an indexing-submission interface. Record any later confirmed official route separately. |
+
+For 360, Sogou and Shenma, distinguish "official entry exists", "account verified",
+"submission permission available", "notification accepted", and "page indexed".
+Record the actual browser result and observation date before changing any pending
+status above. IndexNow coverage and Bing-derived result sources must not be
+reported as individual successful submissions or guaranteed indexing.
+
+## Publication receipts on 2026-10-03 (Asia/Shanghai)
+
+Published commit `93060aa0ec1aec9364f28dc76dfd3c90a39a1402`:
+
+- [Pages deployment](https://github.com/zhenfangzhu/personal-website/actions/runs/37046510135)
+  succeeded before the new notification workflow started. The live about page
+  contains the new bilingual biography and public-profile links.
+- [IndexNow run](https://github.com/zhenfangzhu/personal-website/actions/runs/37046608373)
+  was automatically triggered by `workflow_run`, checked out the same commit,
+  and reported: `IndexNow received 23 URL notifications (HTTP 200); indexing is not confirmed.`
+- Google Search Console confirmed successful resubmission of `sitemap.xml`.
+  The about URL was already indexed; the new request was accepted and added to
+  the priority crawl queue. This does not confirm that the revised text is indexed yet.
+  The site's generative AI inclusion setting was already enabled and was not changed.
+- Bing accepted the sitemap resubmission. Its row changed to `Processing`, with
+  last submit displayed as 2026-10-02 in the platform's timezone. The displayed
+  38 discovered URLs and previous crawl date are older report data.
+- Baidu: a manual submission of 9 principal URLs reached a slider verification
+  challenge. It is **not confirmed submitted**. The sitemap quota remains 0.
+  The user must complete the displayed verification before its result can be checked.
+- 360, Sogou, and Shenma were opened in the current browser session. Each requires
+  account login before submission; no direct submissions or account registrations
+  were completed. No claim is made about post-login quotas or eligibility.
+
+These receipts establish publication and discovery notifications only. Search
+ranking, indexing refreshes, and AI citations require later platform observations.
+The published name remains the verified `朱振方 / Zhenfang Zhu`; the unconfirmed
+name `朱志邦` from the request was not added as an alias.
