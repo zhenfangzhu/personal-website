@@ -158,9 +158,13 @@ Published commit `93060aa0ec1aec9364f28dc76dfd3c90a39a1402`:
 - Bing accepted the sitemap resubmission. Its row changed to `Processing`, with
   last submit displayed as 2026-10-02 in the platform's timezone. The displayed
   38 discovered URLs and previous crawl date are older report data.
-- Baidu: a manual submission of 9 principal URLs reached a slider verification
-  challenge. It is **not confirmed submitted**. The sitemap quota remains 0.
-  The user must complete the displayed verification before its result can be checked.
+- Baidu: the user completed the slider verification for the manual submission
+  of 9 principal URLs and explicitly confirmed seeing `链接提交成功` and clicking
+  `确定`. The form was cleared, consistent with the platform's success flow.
+  This receipt confirms submission acceptance, not indexing. The submission
+  trend report still ended at 2026-10-02 with that day's data unavailable at
+  the follow-up check; no current indexed count is inferred. The sitemap quota
+  remains 0, independently of this successful manual submission.
 - 360, Sogou, and Shenma were opened in the current browser session. Each requires
   account login before submission; no direct submissions or account registrations
   were completed. No claim is made about post-login quotas or eligibility.
