@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SITE_URL = 'https://zhuzhenfang.com'
 ECHOES_URL = SITE_URL + '/echoes/'
+PERSON_ID = SITE_URL + '/#person'
 
 
 def bilingual(zh, en):
@@ -24,7 +25,9 @@ def structured_data(value):
 def collection_data(entries):
     return structured_data({
         '@context': 'https://schema.org', '@type': 'CollectionPage',
-        'name': '回声', 'url': ECHOES_URL,
+        '@id': ECHOES_URL + '#webpage', 'name': '回声', 'url': ECHOES_URL,
+        'isPartOf': {'@id': SITE_URL + '/#website'},
+        'author': {'@type': 'Person', '@id': PERSON_ID, 'name': '朱振方', 'url': SITE_URL + '/about/'},
         'description': '朱振方的播客、访谈与演讲笔记。',
         'mainEntity': {
             '@type': 'ItemList',
@@ -35,6 +38,15 @@ def collection_data(entries):
             ],
         },
     })
+
+
+def source_reference(entry):
+    source_url = re.search(r'https?://[^\s]+', entry['source'])
+    title = entry['source'][:source_url.start()].strip() if source_url else entry['source'].strip()
+    reference = {'@type': 'CreativeWork', 'name': title or entry.get('source_short') or source_url.group()}
+    if source_url:
+        reference.update({'@id': source_url.group(), 'url': source_url.group()})
+    return reference
 
 
 def render(entry, standalone=False):
@@ -49,6 +61,9 @@ def render(entry, standalone=False):
     assert not ready or entry['sections'], 'Published notes need content'
     date = f'<time class="echo-date" datetime="{entry["date"]}">{entry["date"].replace("-", "/")}</time>'
     kind = f'<span class="echo-tag">{e(entry["type"])}</span>' if standalone else ''
+    if standalone:
+        author = bilingual('<a rel="author" href="/about/">朱振方</a>的听后笔记', 'Listening notes by <a rel="author" href="/about/">Zhenfang Zhu</a>')
+        kind += f'<span class="echo-tag">{author}</span>'
     meta = f'<span class="echo-meta">{date}{kind}'
     if not ready:
         meta += '<span class="echo-pending">' + bilingual('待整理', 'Notes pending') + '</span>'
@@ -85,14 +100,11 @@ def render(entry, standalone=False):
         tag = 'blockquote' if section_kind == 'quotation' else 'section'
         classes = 'echo-section echo-reference' if section_kind == 'quotation' else 'echo-section'
         sections.append(f'<{tag} class="{classes}">{section_heading}<ul class="echo-quote-list">{"".join(items)}</ul></{tag}>')
-    source_url = re.search(r'https?://[^\s]+', entry['source'])
-    source_title = entry['source'][:source_url.start()].strip() if source_url else entry['source']
-    source_label = {
-        '播客': ('原播客 ↗', 'Original podcast ↗'),
-        '视频': ('原视频 ↗', 'Original video ↗'),
-    }.get(entry['type'], ('相关内容 ↗', 'Related content ↗'))
-    source_link = f'<a href="{e(source_url.group(), quote=True)}" target="_blank" rel="noopener noreferrer">{bilingual(*source_label)}</a>' if source_url else f'<p>{e(entry.get("source_short") or source_title)}</p>'
-    source = f'<aside class="echo-source-detail">{source_link}</aside>'
+    reference = source_reference(entry)
+    source_title, source_url = reference['name'], reference.get('url')
+    source_link = f'<a href="{e(source_url, quote=True)}" target="_blank" rel="noopener noreferrer">{e(source_title)} ↗</a>' if source_url else e(source_title)
+    source_label = bilingual('原内容 · 摘录与要点来源', 'Original content · Source of excerpts and takeaways')
+    source = f'<aside class="echo-source-detail"><p class="echo-source-label">{source_label}</p><p>{source_link}</p></aside>'
     heading = heading.replace('<h2 ', '<h1 ').replace('</h2>', '</h1>')
     body = ''.join(sections).replace('<h3 ', '<h2 ').replace('</h3>', '</h2>')
     signoff = bilingual('我听见了一些东西。<br>它们离开以后，留下了这些。', 'I heard a few things.<br>After they were gone, this is what stayed.')
@@ -102,6 +114,7 @@ def render(entry, standalone=False):
 def share_page(entry, template):
     url = 'https://zhuzhenfang.com/echoes/' + entry['id'] + '/'
     image = 'https://zhuzhenfang.com/static/assets/echoes/' + entry['id'] + '.png'
+    reference = source_reference(entry)
     title, summary = escape(entry['title'], quote=True), escape(entry['summary'], quote=True)
     head = template.split('<body')[0].replace('    {{STRUCTURED_DATA}}\n', '')
     head = re.sub(r'<title>.*?</title>', f'<title>{title}｜回声</title>', head)
@@ -130,7 +143,10 @@ def share_page(entry, template):
              'mainEntityOfPage': {'@type': 'WebPage', '@id': url},
              'headline': entry['title'], 'description': entry['summary'],
              'image': [image], 'inLanguage': 'zh-CN',
-             'author': {'@type': 'Person', 'name': '朱振方', 'url': SITE_URL + '/'}},
+             'author': {'@type': 'Person', '@id': PERSON_ID, 'name': '朱振方', 'url': SITE_URL + '/about/'},
+             'isPartOf': {'@id': SITE_URL + '/#website'},
+             'citation': reference,
+             'isBasedOn': {'@id': reference['url']} if reference.get('url') else reference},
             {'@type': 'BreadcrumbList', 'itemListElement': [
                 {'@type': 'ListItem', 'position': 1, 'name': '朱振方', 'item': SITE_URL + '/'},
                 {'@type': 'ListItem', 'position': 2, 'name': '回声', 'item': ECHOES_URL},
