@@ -173,3 +173,12 @@ These receipts establish publication and discovery notifications only. Search
 ranking, indexing refreshes, and AI citations require later platform observations.
 The published name remains the verified `朱振方 / Zhenfang Zhu`; the unconfirmed
 name `朱志邦` from the request was not added as an alias.
+
+## Requested Baidu repeat submission
+
+At 2026-10-03 02:32 (Asia/Shanghai), the user completed verification for a
+requested repeat of the same 9 URLs. The platform returned HTTP 200 with
+application status `2` and displayed `您今日的链接提交量已达上限，请改天提交`.
+The repeat was therefore **not accepted**. This does not revoke the original
+submission's success dialog confirmed by the user above, and does not establish
+indexing. No further retries or future automatic submissions were scheduled.
