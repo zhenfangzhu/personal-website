@@ -36,6 +36,11 @@
     const retryPrivateSaveButton = document.getElementById("retry-private-save");
     const publicCopyStatus = document.getElementById("public-copy-status");
     const privateCopyStatus = document.getElementById("private-copy-status");
+    const privateSaveMessage = document.getElementById("private-save-message");
+    const privateConflictRecovery = document.getElementById("private-conflict-recovery");
+    const privateLatestEditor = document.getElementById("private-latest-editor");
+    const refreshPrivateLatestButton = document.getElementById("refresh-private-latest");
+    const savePrivateMergeButton = document.getElementById("save-private-merge");
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
     const PBKDF2_ITERATIONS = 1000000;
@@ -60,6 +65,12 @@
     let privateRoomSalt = null;
     let privateTtlDays = 30;
     let privateRoomExists = false;
+    let privateRevision = null;
+    let privateConflict = false;
+    let privateLatestRevision = null;
+    let privateLatestLoading = false;
+    let privateSaveIssue = "board.saveRecovery";
+    const REVISION_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     function tr(key, values = {}) {
         let value = window.siteLanguage?.text(key, key) || key;
@@ -109,7 +120,12 @@
         publicSaveRecovery.hidden = !publicSaveFailed;
         privateSaveRecovery.hidden = !privateSaveFailed;
         retryPublicSaveButton.disabled = Boolean(publicSavePromise);
-        retryPrivateSaveButton.disabled = Boolean(privateSavePromise) || privateLockPending || privateOpening;
+        retryPrivateSaveButton.disabled = Boolean(privateSavePromise) || privateLockPending || privateOpening || privateConflict || privateLatestLoading;
+        privateSaveMessage.textContent = tr(privateSaveIssue);
+        privateConflictRecovery.hidden = !privateConflict;
+        privateLatestEditor.hidden = !privateLatestRevision;
+        refreshPrivateLatestButton.disabled = Boolean(privateSavePromise) || privateLatestLoading || privateLockPending || privateOpening;
+        savePrivateMergeButton.disabled = !privateLatestRevision || Boolean(privateSavePromise) || privateLatestLoading || privateLockPending || privateOpening;
         lockPrivateRoomButton.disabled = privateLockPending || privateOpening;
         modeTabs.forEach(tab => { tab.disabled = privateLockPending || privateOpening; });
         privateBoardEditor.readOnly = privateLockPending;
@@ -299,8 +315,13 @@
         return payload.content;
     }
 
-    function openPrivateWorkspace(content, expiresAt, exists) {
+    function openPrivateWorkspace(content, expiresAt, exists, revision = null) {
         privateRoomExists = exists;
+        privateRevision = revision;
+        privateConflict = false;
+        privateLatestRevision = null;
+        privateLatestEditor.value = "";
+        privateSaveIssue = "board.saveRecovery";
         privateLastSavedContent = content;
         privateDirty = !exists;
         privateSaveFailed = false;
@@ -341,6 +362,11 @@
         if (privateRoomSalt) privateRoomSalt.fill(0);
         privateRoomSalt = null;
         privateRoomExists = false;
+        privateRevision = null;
+        privateConflict = false;
+        privateLatestRevision = null;
+        privateLatestEditor.value = "";
+        privateSaveIssue = "board.saveRecovery";
     }
 
     function clearPrivateSession() {
@@ -363,10 +389,87 @@
         showJoinPanel();
     }
 
+    function needsPrivateUpgrade(error) {
+        return error?.code === "PGRST202" || error?.code === "42883";
+    }
+
+    function requireRevision(record) {
+        if (!record || typeof record.revision !== "string" || !REVISION_PATTERN.test(record.revision)) {
+            const error = new Error("Versioned private-board service required");
+            error.code = "PGRST202";
+            throw error;
+        }
+        return record;
+    }
+
+    async function readPrivateBoard(roomId) {
+        // Never fall back to the legacy RPC: it cannot protect another person's saved text.
+        const { data, error } = await client
+            .rpc("read_private_board_versioned", { p_room_id: roomId })
+            .maybeSingle();
+        if (error) throw error;
+        return data ? requireRevision(data) : null;
+    }
+
+    async function refreshPrivateLatest() {
+        if (!privateRoomKey || privateLatestLoading) return false;
+        const room = { id: privateRoomId, key: privateRoomKey };
+        privateLatestLoading = true;
+        privateLatestRevision = null;
+        updateSaveActions();
+        try {
+            const record = await readPrivateBoard(room.id);
+            if (room.id !== privateRoomId || room.key !== privateRoomKey) return false;
+            if (!record) {
+                privateSaveIssue = "board.conflictExpired";
+                return false;
+            }
+            const content = await decryptPrivateContent(record);
+            if (room.id !== privateRoomId || room.key !== privateRoomKey) return false;
+            if (content === privateBoardEditor.value) {
+                // A lost response may have followed a successful write. Verify it before clearing the draft.
+                privateRevision = record.revision;
+                privateLastSavedContent = content;
+                privateRoomExists = true;
+                privateDirty = false;
+                privateSaveFailed = false;
+                privateConflict = false;
+                privateSaveIssue = "board.saveRecovery";
+                privateRoomExpiryText.dataset.timestamp = record.expires_at;
+                privateRoomExpiryText.textContent = formatExpiry(record.expires_at);
+                setPrivateSaveStatus("status.savedEncrypted");
+                return true;
+            }
+            privateLatestRevision = record.revision;
+            privateLatestEditor.value = content;
+            privateSaveIssue = "board.conflictRecovery";
+            return false;
+        } catch (error) {
+            if (room.id === privateRoomId && room.key === privateRoomKey) {
+                privateSaveIssue = needsPrivateUpgrade(error) ? "board.serviceUpgrade" : "board.conflictReadFailed";
+            }
+            return false;
+        } finally {
+            privateLatestLoading = false;
+            updateSaveActions();
+        }
+    }
+
+    async function savePrivateMerge() {
+        if (!privateConflict || !privateLatestRevision || privateLatestLoading || privateSavePromise) return false;
+        // The user reviews both texts and explicitly saves their merged draft against the displayed revision.
+        privateRevision = privateLatestRevision;
+        privateConflict = false;
+        privateLatestRevision = null;
+        privateLatestEditor.value = "";
+        privateSaveIssue = "board.saveRecovery";
+        return savePrivateBoard();
+    }
+
     function savePrivateBoard() {
         clearTimeout(privateSaveTimer);
         if (privateSavePromise) return privateSavePromise;
-        if (!privateRoomKey || !privateRoomId || privateWorkspace.hidden) return Promise.resolve(false);
+        if (!privateRoomKey || !privateRoomId || privateWorkspace.hidden || privateConflict || privateLatestLoading) return Promise.resolve(false);
 
         if (privateRoomExists && !privateSaveFailed && privateBoardEditor.value === privateLastSavedContent) {
             privateDirty = false;
@@ -381,38 +484,50 @@
             // Finish each write before taking the next snapshot, including an edit back to the original text.
             while (isCurrentRoom()) {
                 const content = privateBoardEditor.value;
+                if (content.length > 20000) throw new Error("Private board exceeds the text limit");
                 setPrivateSaveStatus("status.encrypting");
                 const encrypted = await encryptPrivateContent(content, room);
                 if (!isCurrentRoom()) return false;
                 setPrivateSaveStatus("status.savingEncrypted");
 
-                const { data, error } = await client.rpc("save_private_board", {
+                const { data, error } = await client.rpc("save_private_board_if_current", {
                     p_room_id: room.id,
                     p_ciphertext: encrypted.ciphertext,
                     p_iv: encrypted.iv,
                     p_salt: encrypted.salt,
-                    p_ttl_days: room.ttl
+                    p_ttl_days: room.ttl,
+                    p_expected_revision: privateRevision
                 });
 
                 if (error) throw error;
                 if (!isCurrentRoom()) return false;
+                const saved = requireRevision(Array.isArray(data) ? data[0] : data);
+                privateRevision = saved.revision;
                 privateRoomExists = true;
                 privateLastSavedContent = content;
                 privateSaveFailed = false;
                 privateDirty = privateBoardEditor.value !== content;
-                privateRoomExpiryText.dataset.timestamp = data || "";
-                privateRoomExpiryText.textContent = formatExpiry(data);
+                privateRoomExpiryText.dataset.timestamp = saved.expires_at || "";
+                privateRoomExpiryText.textContent = formatExpiry(saved.expires_at);
                 if (!privateDirty) {
                     setPrivateSaveStatus("status.savedEncrypted");
                     return true;
                 }
             }
             return false;
-        })().catch(() => {
+        })().catch(async (error) => {
             if (isCurrentRoom()) {
                 privateDirty = true;
                 privateSaveFailed = true;
-                setPrivateSaveStatus("status.saveFailed");
+                if (error?.code === "40001") {
+                    privateConflict = true;
+                    privateSaveIssue = "board.conflictRecovery";
+                    setPrivateSaveStatus("status.privateConflict");
+                    if (await refreshPrivateLatest()) return true;
+                } else {
+                    privateSaveIssue = needsPrivateUpgrade(error) ? "board.serviceUpgrade" : "board.saveRecovery";
+                    setPrivateSaveStatus(needsPrivateUpgrade(error) ? "status.serviceUpgrade" : "status.saveFailed");
+                }
             }
             return false;
         });
@@ -428,6 +543,10 @@
     function schedulePrivateSave() {
         clearTimeout(privateSaveTimer);
         privateDirty = !privateRoomExists || privateSaveFailed || privateBoardEditor.value !== privateLastSavedContent;
+        if (privateConflict || privateLatestLoading) {
+            setPrivateSaveStatus("status.privateConflict");
+            return;
+        }
         if (!privateDirty && !privateSavePromise) {
             setPrivateSaveStatus("status.savedEncrypted");
             return;
@@ -483,11 +602,7 @@
             privateRoomId = credentials.roomId;
             privateRoomKey = credentials.key;
             privateRoomSalt = credentials.salt;
-            const { data, error } = await client
-                .rpc("read_private_board", { p_room_id: privateRoomId })
-                .maybeSingle();
-
-            if (error) throw error;
+            const data = await readPrivateBoard(privateRoomId);
 
             if (!data) {
                 clearPrivateCredentials();
@@ -499,7 +614,7 @@
                 const content = await decryptPrivateContent(data);
                 privateTtlDays = ttlFromRecord(data);
                 setFormMessage("");
-                openPrivateWorkspace(content, data.expires_at, true);
+                openPrivateWorkspace(content, data.expires_at, true, data.revision);
             } catch (error) {
                 clearPrivateCredentials();
                 setFormMessage(tr("status.pinWrong"), "error");
@@ -507,7 +622,7 @@
             }
         } catch (error) {
             clearPrivateCredentials();
-            setFormMessage(tr("status.joinFailed"), "error");
+            setFormMessage(tr(needsPrivateUpgrade(error) ? "status.serviceUpgrade" : "status.joinFailed"), "error");
         } finally {
             enterRoomButton.disabled = false;
             privateOpening = false;
@@ -544,11 +659,7 @@
             newRoomPassword.value = "";
             confirmRoomPassword.value = "";
 
-            const { data: existing, error: lookupError } = await client
-                .rpc("read_private_board", { p_room_id: credentials.roomId })
-                .maybeSingle();
-
-            if (lookupError) throw lookupError;
+            const existing = await readPrivateBoard(credentials.roomId);
             if (existing) {
                 credentials.salt.fill(0);
                 setCreateMessage(tr("status.pinUsed"), "error");
@@ -566,7 +677,7 @@
             await savePrivateBoard();
         } catch (error) {
             clearPrivateCredentials();
-            setCreateMessage(tr("status.createFailed"), "error");
+            setCreateMessage(tr(needsPrivateUpgrade(error) ? "status.serviceUpgrade" : "status.createFailed"), "error");
         } finally {
             createRoomButton.disabled = false;
             privateOpening = false;
@@ -732,10 +843,13 @@
     lockPrivateRoomButton.addEventListener("click", lockPrivateRoom);
     retryPublicSaveButton.addEventListener("click", saveBoard);
     retryPrivateSaveButton.addEventListener("click", savePrivateBoard);
+    refreshPrivateLatestButton.addEventListener("click", refreshPrivateLatest);
+    savePrivateMergeButton.addEventListener("click", savePrivateMerge);
     document.getElementById("copy-public-draft").addEventListener("click", () => copyDraft(editor, publicCopyStatus));
     document.getElementById("copy-private-draft").addEventListener("click", () => copyDraft(privateBoardEditor, privateCopyStatus));
 
     window.addEventListener("site-language-change", () => {
+        updateSaveActions();
         updateCount();
         updatePrivateCount();
         [statusText, roomMessage, createRoomMessage, privateSaveStatus, publicCopyStatus, privateCopyStatus].forEach((element) => {

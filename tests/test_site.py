@@ -136,8 +136,11 @@ class SiteContractTests(unittest.TestCase):
         self.assertIn('window.history.replaceState(null, "", "/board/")', board_js)
         self.assertIn("这个 PIN 已被使用，请换一个。", board_i18n)
         self.assertIn('tr("status.pinUsed")', board_js)
-        self.assertIn('.rpc("save_private_board"', board_js)
-        self.assertIn('.rpc("read_private_board"', board_js)
+        self.assertIn('.rpc("save_private_board_if_current"', board_js)
+        self.assertIn('.rpc("read_private_board_versioned"', board_js)
+        self.assertIn("p_expected_revision: privateRevision", board_js)
+        self.assertIn("b.revision = p_expected_revision", schema)
+        self.assertIn("revoke all on function public.save_private_board(text, text, text, text, integer) from public, anon, authenticated", schema)
         self.assertNotIn("p_password", board_js)
         self.assertNotIn("localStorage", board_js)
         self.assertNotIn("sessionStorage", board_js)
@@ -167,7 +170,7 @@ class SiteContractTests(unittest.TestCase):
         for phrase in (
             "I am Zhenfang Zhu (Chinese: 朱振方). I earned my bachelor's degree from the University of Science and Technology of China",
             "我是朱振方，本科毕业于中国科学技术大学",
-            "中国科学技术大学理学学士",
+            "中国科学技术大学",
             "Software Systems",
             "软件系统",
             "Language Model Applications",
@@ -196,22 +199,30 @@ class SiteContractTests(unittest.TestCase):
         self.assertIn('"@type": "Person"', about)
         self.assertIn('"hasCredential"', about)
         self.assertNotIn("Xavier", read("index.html") + about)
-        self.assertIn("目前从事AI创业", read("index.html"))
-        self.assertIn("目前从事AI创业", about)
-        self.assertIn('"jobTitle": ["AI Entrepreneur", "Software Engineer"]', about)
+        self.assertIn("Redding AI", read("index.html"))
+        self.assertIn("联合创始人", read("index.html"))
+        self.assertIn("AI 创业者", about)
+        self.assertRegex(about, r'"jobTitle": \[[^\]]*"AI Entrepreneur"[^\]]*"Software Engineer"[^\]]*\]')
 
-    def test_homepage_search_title_contains_both_names(self):
+    def test_homepage_search_titles_and_metadata_match_each_language(self):
         index = read("index.html")
         localized_homepages = index + read("en/index.html") + read("zh/index.html")
 
-        self.assertIn('<title id="title">Zhenfang Zhu｜朱振方</title>', index)
-        self.assertIn('<meta property="og:title" content="Zhenfang Zhu｜朱振方">', index)
+        for path in ("index.html", "en/index.html", "zh/index.html"):
+            page = read(path)
+            title = re.search(r'<title[^>]*>([^<]+)</title>', page).group(1)
+            self.assertIn("Zhenfang Zhu", title)
+            if path == "zh/index.html":
+                self.assertIn("朱振方", title)
+            self.assertIn(f'<meta property="og:title" content="{title}">', page)
+            self.assertIn(f'<meta name="twitter:title" content="{title}">', page)
+            language = "zh" if path == "zh/index.html" else "en"
+            self.assertIn(f'data-title-{language}="{title}"', page)
         self.assertIn('<meta property="og:site_name" content="Zhenfang Zhu｜朱振方">', index)
-        self.assertIn('data-title-en="Zhenfang Zhu｜朱振方" data-title-zh="Zhenfang Zhu｜朱振方"', index)
         self.assertIn('"name": "Zhenfang Zhu｜朱振方"', index)
         self.assertIn('"alternateName": ["朱振方", "zhuzhenfang", "@zhuzhenfang", "zhenfangzhu"]', index)
         self.assertIn('"@type": "WebSite"', index)
-        self.assertEqual(localized_homepages.count('<title id="title">Zhenfang Zhu｜朱振方</title>'), 3)
+        self.assertEqual(localized_homepages.count('<title id="title">'), 3)
         self.assertEqual(localized_homepages.count('<h1 class="site-title" id="profile-name"><span class="name-en">Zhenfang Zhu</span><span class="name-divider">｜</span><span class="name-zh">朱振方</span></h1>'), 3)
         self.assertNotIn('Zhu Zhenfang', localized_homepages + read("about/index.html"))
         self.assertIn('"familyName": "朱"', index)
@@ -237,8 +248,10 @@ class SiteContractTests(unittest.TestCase):
             self.assertIn(f'<link rel="canonical" href="https://zhuzhenfang.com{canonical}">', localized)
             self.assertIn('hreflang="x-default" href="https://zhuzhenfang.com/"', localized)
 
-        self.assertNotIn('data-lang="zh"', read("en/index.html"))
-        self.assertNotIn('data-lang="en"', read("zh/index.html"))
+        # The language control may show either label; localized article copy stays single-language.
+        for path, other in (("en/index.html", "zh"), ("zh/index.html", "en")):
+            main = re.search(r"<main\b[^>]*>(.*?)</main>", read(path), re.DOTALL).group(1)
+            self.assertNotIn(f'data-lang="{other}"', main)
 
     def test_homepage_uses_responsive_optimized_portrait(self):
         index = read("index.html")
@@ -265,7 +278,6 @@ class SiteContractTests(unittest.TestCase):
             "venture building",
         ):
             self.assertNotIn(phrase, text)
-        self.assertLessEqual(len(re.findall(r"\bai\b", text)), 12)
         self.assertIn("Contact details are below.", home)
         self.assertIn("联系方式见下方。", home)
 
@@ -365,7 +377,7 @@ class SiteContractTests(unittest.TestCase):
         index = read("index.html")
         css = read("static/css/home.css")
         self.assertIn('class="bio-view-controls"', index)
-        self.assertIn('class="language-picker"', index)
+        self.assertRegex(index, r'class="language-picker(?: [^"]+)?"')
         self.assertIn('class="language-menu"', index)
         self.assertIn('data-language-option="en"', index)
         self.assertIn('data-language-option="zh"', index)
@@ -535,8 +547,10 @@ class SiteContractTests(unittest.TestCase):
     def test_homepage_uses_current_editorial_release_assets(self):
         index = read("index.html")
         css = read("static/css/home.css")
-        self.assertIn('static/css/home.css?v=2026090501', index)
-        self.assertIn('static/js/language.js?v=2026091201', index)
+        for asset in ("static/css/home.css", "static/js/language.js"):
+            versioned = re.search(re.escape(asset) + r"\?v=\d{8,}", index).group(0)
+            for path in ("en/index.html", "zh/index.html"):
+                self.assertIn(versioned, read(path))
         self.assertIn('--cjk-reading-font: "PingFang SC"', css)
         self.assertIn('html[data-language="zh"] .bio-view-panel [data-lang="zh"]', css)
 

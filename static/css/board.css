@@ -1033,3 +1033,23 @@ a {
     .primary-button,
     .secondary-button { color: #151514; }
 }
+
+/* Conflict recovery preserves the draft above while making the saved revision readable. */
+#private-conflict-recovery { margin-top: 1rem; }
+#private-latest-editor {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    min-height: 10rem;
+    max-height: 24rem;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    resize: vertical;
+    border: 1px solid var(--line);
+    border-radius: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: inherit;
+    line-height: 1.7;
+}
+#private-latest-editor[hidden] { display: none; }

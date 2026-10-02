@@ -12,8 +12,10 @@
 @media print{header,footer,.actions,.result-heading,details{display:none!important}.page-intro{padding:16px 0}.layout{display:block}.completed-layout>aside{display:none!important}.result-image{max-width:100%;border:0}.card{break-inside:avoid}body{background:white}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 
+.save-warning{margin:0 0 20px;padding:14px 16px;border:1px solid var(--red);border-radius:4px;background:var(--paper)}.save-warning[hidden],#exportStoredJournal[hidden]{display:none!important}.save-warning p{margin:0 0 10px;color:var(--ink);font:13px/1.7 var(--sans)}.save-warning .actions{margin:0;gap:8px;justify-content:flex-start}.save-warning button{background:var(--card);color:var(--ink);border:1px solid var(--line)}.focus-top .save-warning{margin:0 0 8px;padding:10px 12px}.focus-top .save-warning .actions{gap:4px}.focus-top .save-warning button{padding:8px;font-size:12px}
 </style><link rel="stylesheet" href="/shicao/focus.css?v=dca4dc501b4a"></head><body>
 <header><a class="home-link" href="/">← 返回个人主页</a><div class="header-actions"><button id="historyBtn">往日卦录</button><details class="more"><summary>更多</summary><div class="morepanel"><button onclick="downloadCurrent()">存下此录 · 文字</button><button id="clearBtn" class="danger">清除所有数据</button></div></details></div></header>
+<section id="saveWarning" class="save-warning" aria-label="卦录保存提示" hidden><p id="saveWarningText" role="alert"></p><div class="actions"><button id="retryJournal" type="button" onclick="retryJournal()">重试保存</button><button type="button" onclick="exportCurrentJournal()">导出当前备份</button><button id="exportStoredJournal" type="button" onclick="exportStoredJournal()" hidden>导出原有数据</button></div></section>
 <div class="wrap"><div class="page-intro"><div class="ritual-kicker">实用工具 / 蓍草起卦</div><h1>蓍草问易</h1></div><div class="layout"><main id="main" class="card guide" aria-live="polite"></main><aside class="card" aria-label="卦象显示" aria-live="polite"><div class="meta"><h3>此 间 卦 象</h3><span id="progress"></span></div><p id="resultHelp" class="small"></p><div id="hexTitle"></div><div id="hex"></div><div id="changedHex"></div><div class="small">爻自下生，逐位而成 ↑<br>一画为阳，两断为阴；标「动」者，为此卦动爻。</div><details class="reading-guidance"><summary>筮法与须知</summary><div class="small">本页采用常见的大衍筮法：50 根中取 1 根始终不用，其余 49 根参与起卦；每一变都挂一，三变成爻。余数按 1–4 记，整除四时留 4 根。每爻结束后收回三变移出的蓍草，重新用 49 根。<p>网页操作时，先将手指或鼠标放在滑块上，闭眼随手拖动，松开只确定分堆位置，再点击“落定此分”提交本轮，避免按根数挑选。页面再按实际根数演算，不直接抽取爻值。左堆至少 1 根，右堆至少 2 根，以保证挂一后两堆都有蓍草。</p><p>不同传承可能有不同操作。本页只记录卦象，不提供断语，也不指定书籍页码。</p><a href="https://www.chinakongzi.org/content/3947_194609.html" target="_blank" rel="noopener">方法参考：中国孔子网《朱熹的〈周易〉观》</a></div></details></aside></div><details><summary>回看此筮 · 逐变明细</summary><div id="log" class="card tablewrap"></div></details></div>
 <footer><span id="status" role="status"></span><br>起卦记录仅保存在当前设备的浏览器中，不上传服务器；如需长期留存，请保存结果图片。
 </footer>
@@ -28,11 +30,61 @@ const tris=['乾','兑','离','震','巽','坎','艮','坤'],patterns=['111','11
 const matrix=[[1,43,14,34,9,5,26,11],[10,58,38,54,61,60,41,19],[13,49,30,55,37,63,22,36],[25,17,21,51,42,3,27,24],[44,28,50,32,57,48,18,46],[6,47,64,40,59,29,4,7],[33,31,56,62,53,39,52,15],[12,45,35,16,20,8,23,2]];
 function fresh(){return {date:new Date().toISOString(),mode:'virtual',auto:true,firstStalk:null,virtual:null,step:0,records:[],left:null,right:null,question:'',purpose:'',questionLocked:false,notes:''}}
 let state=fresh(),undo=[],archive=[],storageOK=true,automaticBatch=false;
-try{const data=JSON.parse(localStorage.getItem(KEY)||'null');if(data&&data.state&&Array.isArray(data.state.records)){state=data.state;undo=data.undo||[];archive=data.archive||[]}}catch(e){storageOK=false}
-if(!state.mode)state.mode=state.step===0?'virtual':'physical';
-if(state.questionLocked===undefined)state.questionLocked=state.step>0||state.records.length>0;
+let readBlocked=false,blockedRaw=null,storageReason='',lastSavedJSON=null,pristineJSON,initialJournalPresent=false;
+const saveWarning=$('#saveWarning');
+function validJournalState(s){
+if(!s||typeof s!=='object'||Array.isArray(s)||!Array.isArray(s.records)||s.records.length>18||!Number.isInteger(s.step)||s.step<0||s.step>6||typeof s.date!=='string'||!Number.isFinite(Date.parse(s.date)))return false;
+if(s.mode!==undefined&&!['virtual','physical'].includes(s.mode))return false;
+if(['question','purpose','notes'].some(key=>s[key]!==undefined&&typeof s[key]!=='string'))return false;
+if(['auto','questionLocked','splitReady'].some(key=>s[key]!==undefined&&typeof s[key]!=='boolean'))return false;
+if(s.firstStalk!=null&&(!Number.isInteger(s.firstStalk)||s.firstStalk<0||s.firstStalk>=50))return false;
+if(['left','right'].some(key=>s[key]!=null&&(!Number.isInteger(s[key])||s[key]<1||s[key]>4)))return false;
+if(!s.records.every((r,i)=>r&&Number.isInteger(r.left)&&r.left>=1&&r.left<=4&&Number.isInteger(r.right)&&r.right>=1&&r.right<=4&&r.total===1+r.left+r.right&&(i%3===0?[5,9]:[4,8]).includes(r.total)))return false;
+if(s.step===0&&s.records.length||s.step===5&&(!s.records.length||s.records.length%3)||s.step===6&&s.records.length!==18)return false;
+if(s.mode==='virtual'&&s.step>=2&&s.step<=4){const v=s.virtual;if(!v||!Number.isInteger(v.split)||!Number.isInteger(v.left)||!Number.isInteger(v.right)||v.left<1||v.right<1||typeof v.hung!=='boolean'||!Number.isInteger(v.counted)||v.counted<0)return false;}
+return true;
+}
+function parseJournal(raw){
+const data=JSON.parse(raw);
+if(!data||typeof data!=='object'||Array.isArray(data)||!validJournalState(data.state)||data.undo!==undefined&&(!Array.isArray(data.undo)||!data.undo.every(validJournalState))||data.archive!==undefined&&(!Array.isArray(data.archive)||!data.archive.every(validJournalState)))throw new Error('卦录格式不完整');
+return data;
+}
+function normalizeJournalState(previous){const s={...fresh(),...previous};if(!previous.mode)s.mode=s.step===0?'virtual':'physical';if(previous.questionLocked===undefined)s.questionLocked=s.step>0||s.records.length>0;return s}
+function restoreJournal(data){state=normalizeJournalState(data.state);undo=(data.undo||[]).map(normalizeJournalState);archive=(data.archive||[]).map(normalizeJournalState)}
+function journalJSON(){return JSON.stringify({state,undo,archive})}
+try{const raw=localStorage.getItem(KEY);if(raw!==null){blockedRaw=raw;restoreJournal(parseJournal(raw));blockedRaw=null;initialJournalPresent=true}}catch(e){readBlocked=true;storageOK=false;storageReason=blockedRaw===null?'read':'invalid'}
+pristineJSON=journalJSON();if(initialJournalPresent)lastSavedJSON=pristineJSON;
 const copy=x=>JSON.parse(JSON.stringify(x));const escapeHTML=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function save(){if(automaticBatch)return;try{localStorage.setItem(KEY,JSON.stringify({state,undo,archive}));storageOK=true}catch(e){storageOK=false}$('#status').textContent=storageOK?'此筮已记，存于当前浏览器':'此处暂不能自动留存，请导出卦录保存。';}
+function updateStorageStatus(){
+const messages={read:'未能读取原有卦录，已暂停自动保存。当前输入仍在此页面，请重试读取或导出当前备份。',invalid:'原有卦录无法解析，已暂停自动保存，原始数据仍保留。请导出原有数据与当前备份后再恢复。',existing:'已重新读到原有卦录。为保留当前页面的输入，仍暂停自动保存。请分别导出当前备份和原有数据，再刷新页面载入旧录。',write:'此处暂不能自动留存，当前内容仍在此页面。请重试保存或导出当前备份后再关闭。'};
+const failed=readBlocked||!storageOK;saveWarning.hidden=!failed;
+$('#saveWarningText').textContent=failed?messages[storageReason]||messages.write:'';
+$('#retryJournal').textContent=readBlocked?'重试读取':'重试保存';$('#exportStoredJournal').hidden=blockedRaw===null;
+$('#status').textContent=failed?(readBlocked?'原有卦录未载入，自动保存已暂停':'当前内容尚未保存，请导出备份。'):(lastSavedJSON===null?'尚未起筮，可在此记下一问。':'此筮已记，存于当前浏览器');
+}
+function save(){
+if(automaticBatch)return false;
+if(readBlocked){updateStorageStatus();return false}
+try{const json=journalJSON();localStorage.setItem(KEY,json);lastSavedJSON=json;storageOK=true;storageReason='';updateStorageStatus();return true}catch(e){storageOK=false;storageReason='write';updateStorageStatus();return false}
+}
+function retryJournal(){
+if(readBlocked){
+try{
+const raw=localStorage.getItem(KEY);blockedRaw=raw;
+if(raw!==null){
+let previous;try{previous=parseJournal(raw)}catch(e){storageReason='invalid';updateStorageStatus();return false}
+if(journalJSON()!==pristineJSON){storageReason='existing';updateStorageStatus();return false}
+restoreJournal(previous);readBlocked=false;blockedRaw=null;storageOK=true;storageReason='';pristineJSON=journalJSON();lastSavedJSON=pristineJSON;render();return true;
+}
+readBlocked=false;blockedRaw=null;
+}catch(e){storageReason='read';updateStorageStatus();return false}
+}
+return save();
+}
+function downloadJournal(name,content){const blob=new Blob([content],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function exportCurrentJournal(){downloadJournal('蓍草问易-当前备份-'+state.date.slice(0,10)+'.json',JSON.stringify({state,undo,archive},null,2))}
+function exportStoredJournal(){if(blockedRaw!==null)downloadJournal('蓍草问易-原有数据.json',blockedRaw)}
+window.addEventListener('beforeunload',event=>{if(journalJSON()!==pristineJSON&&(readBlocked||journalJSON()!==lastSavedJSON)){event.preventDefault();event.returnValue=''}});
 function lines(s=state){const a=[];for(let i=0;i+2<s.records.length;i+=3)a.push((49-s.records.slice(i,i+3).reduce((n,r)=>n+r.total,0))/4);return a}
 function remaining(){return 49-state.records.slice(Math.floor(state.records.length/3)*3).reduce((n,r)=>n+r.total,0)}
 function info(vals,changed=false){const bits=vals.map(v=>changed?(v===6?1:v===9?0:v%2):v%2);const low=patterns.indexOf(bits.slice(0,3).join('')),up=patterns.indexOf(bits.slice(3).join(''));const number=matrix[low][up];return {number,name:hexNames[number-1],description:`${tris[up]}上 · ${tris[low]}下`}}
@@ -61,7 +113,7 @@ const annotations=[
 const [quote,explanation]=annotations[state.step];
 return `<aside class="classical-note" aria-label="本步原文注释"><a class="classical-source" href="https://www.eee-learning.com/book/1742" target="_blank" rel="noopener">《系辞上传》</a><blockquote>${quote}</blockquote>${state.records.length>=3?`<details class="annotation-explain"><summary>白话解释</summary><p>${explanation}</p></details>`:`<p><span>白话</span>${explanation}</p>`}</aside>`;
 }
-function render(){if(automaticBatch)return;document.querySelector('.layout').classList.toggle('completed-layout',state.step===6);const v=lines(),round=state.records.length%3+1,idx=Math.floor(state.records.length/3),r=remaining();$('#progress').textContent=`${v.length} / 6 爻`;$('#resultHelp').textContent=v.length===6?'六爻已齐，卦象在此。可循卦名、动爻，展卷相参。':v.length?`已记 ${v.length} 爻，继续在左边起下一爻。`:'卦自初爻而起。每满三轮，此处自下添上一爻。';$('#hex').innerHTML=diagram(v);if(v.length&&state.records.length%3===0){const newest=$('#hex').children[6-v.length];if(newest)newest.classList.add('newest-yao')}
+function render(){if(automaticBatch)return;saveWarning.remove();document.querySelector('.layout').classList.toggle('completed-layout',state.step===6);const v=lines(),round=state.records.length%3+1,idx=Math.floor(state.records.length/3),r=remaining();$('#progress').textContent=`${v.length} / 6 爻`;$('#resultHelp').textContent=v.length===6?'六爻已齐，卦象在此。可循卦名、动爻，展卷相参。':v.length?`已记 ${v.length} 爻，继续在左边起下一爻。`:'卦自初爻而起。每满三轮，此处自下添上一爻。';$('#hex').innerHTML=diagram(v);if(v.length&&state.records.length%3===0){const newest=$('#hex').children[6-v.length];if(newest)newest.classList.add('newest-yao')}
 $('#hexTitle').innerHTML=v.length===6?`<h3>第 ${info(v).number} 卦 · ${info(v).name}</h3><div class="small">本卦 · ${info(v).description}</div>`:'';
 $('#changedHex').innerHTML=v.length===6?`<p class="summaryline"><strong>动爻：</strong>${v.map((x,i)=>x===6||x===9?lineLabel(x,i):null).filter(Boolean).join('、')||'无'}</p><div class="changed-result">${resultBox(v,true)}</div>`:'';
 let html=`<div class="meta"><span>${state.step===0?'静心 · 起筮':state.step===6?'六爻已成':state.step===5?`第 ${v.length} 爻完成`:`第 ${idx+1} 爻 · 第 ${round} 轮 / 共 3 轮`}</span><span>已完成 ${state.records.length} / 18 轮</span></div><div class="track" aria-label="已完成 ${v.length} 爻，共六爻">${Array.from({length:6},(_,i)=>`<i class="${i<v.length?'done':''}"></i>`).join('')}</div>`;
@@ -81,8 +133,8 @@ if(state.step!==6)html=html.replace('<div class="actions">',stepAnnotation()+'<d
 if(state.mode==='virtual'&&state.auto!==false&&state.step>=2&&state.step<=5){
 html=html.replace(/<div class="actions">[\s\S]*?<\/div>/,navigation('依数推演，完成此变 →','finishAutoRound()'));
 }
-const previousFocus=captureReadingFocus();$('#main').innerHTML=html;arrangeReadingSurface();bindSplitGesture();bindResultCard();bindOpeningQuestions();restoreReadingFocus(previousFocus);
-$('#log').innerHTML=state.records.length?`<table><thead><tr><th>爻位</th><th>变次</th><th>左余</th><th>右余</th><th>移出（含挂一）</th><th>剩余</th></tr></thead><tbody>${state.records.map((x,i)=>`<tr><td>${names[Math.floor(i/3)]}</td><td>${i%3+1}</td><td>${x.left}</td><td>${x.right}</td><td>${x.total}</td><td>${49-state.records.slice(Math.floor(i/3)*3,i+1).reduce((a,b)=>a+b.total,0)}</td></tr>`).join('')}</tbody></table>`:'此筮尚未起笔。每落定一变，便在此留下一记。';save()}
+const previousFocus=captureReadingFocus();$('#main').innerHTML=html;arrangeReadingSurface();bindSplitGesture();bindResultCard();bindOpeningQuestions();restoreReadingFocus(previousFocus);($('#main').querySelector('.focus-top')||$('#main')).prepend(saveWarning);
+$('#log').innerHTML=state.records.length?`<table><thead><tr><th>爻位</th><th>变次</th><th>左余</th><th>右余</th><th>移出（含挂一）</th><th>剩余</th></tr></thead><tbody>${state.records.map((x,i)=>`<tr><td>${names[Math.floor(i/3)]}</td><td>${i%3+1}</td><td>${x.left}</td><td>${x.right}</td><td>${x.total}</td><td>${49-state.records.slice(Math.floor(i/3)*3,i+1).reduce((a,b)=>a+b.total,0)}</td></tr>`).join('')}</tbody></table>`:'此筮尚未起笔。每落定一变，便在此留下一记。';updateStorageStatus()}
 function confirmRemainders(){if(!valid())return;if(!automaticBatch)undo.push(copy(state));state.step=4;save();render()}
 function textRecord(s){const v=lines(s);let t=`蓍草问易\n起卦时间：${new Date(s.date).toLocaleString('zh-CN')}（查看设备当地时间）\n起卦时间 UTC：${new Date(s.date).toISOString()}\n所问：${s.question||'未填写'}\n所求：${s.purpose||'未填写'}\n方法：49 根，三变皆挂一（${s.mode==='virtual'?'屏上分蓍':'执蓍手记'}）\n六爻（自下而上）：${v.join('、')}\n`;if(v.length===6){const a=info(v),b=info(v,true);t+=`本卦：第 ${a.number} 卦 ${a.name}（${a.description}）\n之卦：第 ${b.number} 卦 ${b.name}（${b.description}）\n动爻：${v.map((x,i)=>x===6||x===9?lineLabel(x,i):null).filter(Boolean).join('、')||'无'}\n卦画（自上而下）：\n${v.slice().reverse().map(x=>(x%2?'━━━━━━':'━━  ━━')+' '+types[x]+(x===6||x===9?'（动）':'')).join('\n')}\n`}t+='\n揲蓍明细：\n'+s.records.map((r,i)=>`${names[Math.floor(i/3)]} 第${i%3+1}变：${r.split?`分堆左${r.split}，右${49-s.records.slice(Math.floor(i/3)*3,i).reduce((n,x)=>n+x.total,0)-r.split}（${r.splitMethod==='random'?'随机分堆':'手动分堆'}），`:''}左余${r.left}，右余${r.right}，挂一1，移出${r.total}，剩余${49-s.records.slice(Math.floor(i/3)*3,i+1).reduce((n,x)=>n+x.total,0)}`).join('\n');return t+'\n\n手记：\n'+s.notes+(v.length===6?'\n\n请 AI 参解此卦：\n'+AI_REQUEST:'')}
 let resultCanvas=null;
@@ -126,7 +178,7 @@ $('#clearBtn').onclick=()=>{$('#clearError').textContent='';$('#clearDialog').sh
 function clearAllData(){
 const clean=fresh();
 try{localStorage.setItem(KEY,JSON.stringify({state:clean,undo:[],archive:[]}))}catch(e){$('#clearError').textContent='浏览器未允许清除保存的数据，原记录仍保留。请检查浏览器存储设置后重试。';return}
-state=clean;undo=[];archive=[];
+state=clean;undo=[];archive=[];readBlocked=false;blockedRaw=null;storageOK=true;storageReason='';pristineJSON=journalJSON();lastSavedJSON=pristineJSON;
 $('#historyDialog').close();$('#historyList').textContent='';$('#archiveView').textContent='';
 $('#clearDialog').close();render();$('#status').textContent='旧录已清，可重新起筮。';$('.more > summary').focus();
 }

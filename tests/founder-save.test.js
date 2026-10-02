@@ -9,6 +9,10 @@ const source = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
     .map(match => match[1]).find(script => script.includes("const STORAGE_KEY='founder-dna-v2'"));
 assert.ok(source, "The application inline script must be present");
 const storageKey = "founder-dna-v2";
+const translationContext = { window: {} };
+vm.runInNewContext(readFileSync(join(__dirname, "../static/js/founder-i18n.js"), "utf8"), translationContext);
+const translations = translationContext.window.SITE_TEXT_TRANSLATIONS;
+const stressValues = ["立即行动并试错", "先分析信息", "主动寻找用户反馈", "组织其他人协作", "亲自把问题解决", "等待方向更清晰"];
 const decode = value => value.replace(/&(?:amp|lt|gt|quot|#39);/g, entity => ({
     "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'"
 }[entity]));
@@ -27,7 +31,9 @@ class MemoryElement {
         this.hidden = false;
         this.disabled = false;
         this.checked = false;
-        this.value = "";
+        this._value = "";
+        this.selected = false;
+        this.selectionSet = false;
         this.classList = {
             add: name => this.attributes.set("class", [...new Set([...this.classes(), name])].join(" ")),
             remove: name => this.attributes.set("class", this.classes().filter(value => value !== name).join(" ")),
@@ -36,6 +42,22 @@ class MemoryElement {
         };
     }
 
+    get value() {
+        if (this.tagName === "OPTION") return this.attributes.has("value") ? this.attributes.get("value") : this.textContent;
+        if (this.tagName === "SELECT") {
+            const options = this.querySelectorAll("option");
+            return (options.find(option => option.selected) || (!this.selectionSet && options[0]))?.value ?? "";
+        }
+        return this._value;
+    }
+    set value(value) {
+        value = String(value);
+        if (this.tagName === "OPTION") this.attributes.set("value", value);
+        else if (this.tagName === "SELECT") {
+            this.selectionSet = true;
+            this.querySelectorAll("option").forEach(option => { option.selected = option.value === value; });
+        } else this._value = value;
+    }
     classes() { return (this.attributes.get("class") || "").split(/\s+/).filter(Boolean); }
     get children() { return this.childNodes.filter(node => node instanceof MemoryElement); }
     get textContent() { return this.childNodes.map(node => typeof node === "string" ? node : node.textContent).join(""); }
@@ -45,14 +67,14 @@ class MemoryElement {
         value = String(value);
         this.attributes.set(name, value);
         if (name.startsWith("data-")) this.dataset[camel(name.slice(5))] = value;
-        if (["hidden", "disabled", "checked"].includes(name)) this[name] = true;
+        if (["hidden", "disabled", "checked", "selected"].includes(name)) this[name] = true;
         if (["id", "value", "name", "type"].includes(name)) this[name] = value;
     }
     getAttribute(name) { return name.startsWith("data-") ? this.dataset[camel(name.slice(5))] : this.attributes.get(name); }
     removeAttribute(name) {
         this.attributes.delete(name);
         if (name.startsWith("data-")) delete this.dataset[camel(name.slice(5))];
-        if (["hidden", "disabled", "checked"].includes(name)) this[name] = false;
+        if (["hidden", "disabled", "checked", "selected"].includes(name)) this[name] = false;
     }
     matches(selector) {
         const tag = selector.match(/^[\w-]+/)?.[0];
@@ -105,7 +127,7 @@ class MemoryElement {
             const tag = token[1].toLowerCase();
             if (token[0].startsWith("</")) {
                 const node = stack.pop();
-                if (["textarea", "option"].includes(tag)) node.value = node.textContent;
+                if (tag === "textarea") node.value = node.textContent;
                 continue;
             }
             const node = new MemoryElement(tag, this.ownerDocument);
@@ -156,7 +178,7 @@ function setup(options = {}) {
     document.blobs = new Map();
     document.downloads = [];
     document.documentElement = new MemoryElement("html", document);
-    document.documentElement.dataset.language = "zh";
+    document.documentElement.dataset.language = options.language || "zh";
     document.appendChild(document.documentElement);
     document.body = new MemoryElement("body", document);
     document.documentElement.appendChild(document.body);
@@ -168,7 +190,18 @@ function setup(options = {}) {
     const window = new MemoryElement("window", document);
     window.scrollTo = () => {};
     window.print = () => {};
-    window.siteLanguage = { translate() {}, current: () => document.documentElement.dataset.language };
+    const originalOptionText = new WeakMap();
+    window.siteLanguage = {
+        translate(root) {
+            if (!options.translateOptions) return;
+            root.querySelectorAll("option").forEach(option => {
+                if (!originalOptionText.has(option)) originalOptionText.set(option, option.textContent);
+                const original = originalOptionText.get(option);
+                option.textContent = document.documentElement.dataset.language === "en" ? translations[original] || original : original;
+            });
+        },
+        current: () => document.documentElement.dataset.language
+    };
     const setTimeout = (fn, delay) => { const id = ++nextTimer; timers.set(id, { fn, delay }); return id; };
     const clearTimeout = id => timers.delete(id);
     window.setTimeout = setTimeout;
@@ -195,6 +228,7 @@ function setup(options = {}) {
         change(selector, value) { const element = get(selector); element.value = value; element.emit("change"); },
         import(contents) { const element = get("#file-import"); element.files = [{ contents }]; element.emit("change"); },
         state() { return get("#save-state").dataset.state; },
+        language(value) { document.documentElement.dataset.language = value; window.siteLanguage.translate(document); },
         leave() { return window.emit("beforeunload", { defaultPrevented: false }); },
         tick() { const scheduled = [...timers.values()]; timers.clear(); scheduled.forEach(timer => timer.fn()); },
         async export() {
@@ -415,4 +449,137 @@ test("invalid imported backup structures cannot replace the current memory or st
         assert.deepEqual(await app.export(), JSON.parse(app.initial));
     }
     assert.equal(app.confirmations.length, 0, "Invalid data must be rejected before any replacement confirmation");
+});
+
+
+test("select options keep explicit values when their visible labels are translated", () => {
+    const select = new MemoryElement("select");
+    select.innerHTML = '<option value="">请选择</option><option value="stable" selected>中文</option><option>Implicit value</option>';
+    const [, explicit, implicit] = select.querySelectorAll("option");
+    assert.equal(select.value, "stable");
+    explicit.textContent = "English";
+    implicit.textContent = "Translated implicit value";
+    assert.equal(explicit.value, "stable");
+    assert.equal(implicit.value, "Translated implicit value");
+    assert.equal(select.value, "stable");
+});
+
+for (const canonical of stressValues) {
+    test(`English stress response ${translations[canonical]} survives navigation, language changes, and export`, async () => {
+        const app = setup({ language: "en", translateOptions: true });
+        app.click('[data-nav="tasks"]');
+        app.click('[data-eval="A-A"]');
+        app.click('[data-step="8"]');
+        const option = app.get("#stress").querySelectorAll("option").find(option => option.textContent === translations[canonical]);
+        assert.ok(option, "The selected stress response must have its English label");
+        app.change("#stress", option.value);
+        app.click('[data-step="9"]');
+        app.click('[data-step="8"]');
+        assert.equal(app.get("#stress").value, canonical);
+        app.language("zh");
+        assert.equal(app.get("#stress").value, canonical);
+        app.language("en");
+        assert.equal(app.get("#stress").value, canonical);
+        const exported = await app.export();
+        assert.equal(exported.formal.evaluations.find(evaluation => evaluation.id === "A-A").stress, canonical);
+    });
+
+    test(`previously saved English stress response ${translations[canonical]} restores without an initial storage write`, async () => {
+        const stored = JSON.parse(initialFixture);
+        for (const team of [stored.formal, stored.demo]) team.evaluations[0].stress = translations[canonical];
+        const raw = JSON.stringify(stored);
+        const app = setup({ storedValue: raw, language: "en", translateOptions: true });
+        app.click('[data-nav="tasks"]');
+        app.click('[data-eval="A-A"]');
+        app.click('[data-step="8"]');
+        assert.equal(app.get("#stress").value, canonical);
+        const exported = await app.export();
+        for (const team of [exported.formal, exported.demo]) assert.equal(team.evaluations[0].stress, canonical);
+        assert.equal(app.storage.value, raw);
+        assert.equal(app.storage.attempts.length, 0);
+    });
+}
+
+test("JSON import and a recovered storage read normalize old English stress answers in both data spaces", async () => {
+    const stored = JSON.parse(initialFixture);
+    for (const team of [stored.formal, stored.demo]) team.evaluations.forEach((evaluation, index) => { evaluation.stress = translations[stressValues[index % stressValues.length]]; });
+    const raw = JSON.stringify(stored);
+    const imported = setup({ confirmResult: true });
+    imported.import(raw);
+    const recovered = setup({ readError: storageError("SecurityError"), storedValue: raw });
+    recovered.storage.readError = null;
+    recovered.click('[data-action="retry-save"]');
+    for (const app of [imported, recovered]) {
+        const exported = await app.export();
+        for (const team of [exported.formal, exported.demo]) team.evaluations.forEach((evaluation, index) => { assert.equal(evaluation.stress, stressValues[index % stressValues.length]); });
+    }
+    assert.equal(recovered.storage.value, raw);
+    assert.equal(recovered.storage.attempts.length, 0);
+});
+
+function assertNoImportedMarkup(app) {
+    const injected = app.get("#app").querySelectorAll("img, script, iframe, [onerror], [onload], [onfocus], [data-audit-injected]");
+    assert.equal(injected.length, 0, "Imported strings must not create executable elements or attributes");
+}
+
+test("untrusted JSON names, event IDs, narratives, and calibration data stay literal through every app page", async () => {
+    const candidate = JSON.parse(initialFixture);
+    candidate.formal = structuredClone(candidate.demo);
+    candidate.activeMode = "formal";
+    const payload = '<img src="x" onerror="window.auditInjected=true" data-audit-injected="yes"> & "quoted"';
+    candidate.formal.founders.forEach(founder => { founder.name = `${founder.id} ${payload}`; });
+    for (const key of Object.keys(candidate.formal.project)) candidate.formal.project[key] = `${key}: </textarea>${payload}`;
+    for (const evaluation of candidate.formal.evaluations) evaluation.events.forEach(event => {
+        event.id += `" data-audit-injected="attribute">${payload}`;
+        event.context = `Context: </textarea>${payload}`;
+        event.action = `Action: </textarea>${payload}`;
+        event.result = `Result: </textarea>${payload}`;
+    });
+    candidate.formal.calibration.date = `" autofocus onfocus="window.auditInjected=true">${payload}`;
+    candidate.formal.calibration.consensus = `Consensus: </textarea>${payload}`;
+    candidate.formal.calibration.founders = Object.fromEntries(candidate.formal.founders.map(founder => [founder.id, { confirmedTop: [], verify: "", experiment: `Experiment ${founder.id}: </textarea>${payload}` }]));
+    const app = setup({ confirmResult: true });
+    app.import(JSON.stringify(candidate));
+    assert.equal(app.state(), "saved", "The backup's text fields are valid data and should not be rejected");
+    assertNoImportedMarkup(app);
+    assert.ok(app.get("#app").textContent.includes(candidate.formal.founders[0].name));
+    app.click('[data-nav="tasks"]');
+    assertNoImportedMarkup(app);
+    assert.ok(app.get('[data-eval="A-A"]').textContent.includes(candidate.formal.founders[0].name));
+    app.click('[data-eval="A-A"]');
+    assertNoImportedMarkup(app);
+    assert.ok(app.get(".page-title").textContent.includes(candidate.formal.founders[0].name));
+    app.click('[data-step="9"]');
+    assertNoImportedMarkup(app);
+    const event = candidate.formal.evaluations.find(evaluation => evaluation.id === "A-A").events[0];
+    assert.equal(app.get("[data-event-id]").dataset.eventId, event.id);
+    assert.equal(app.get("[data-remove-event]").dataset.removeEvent, event.id);
+    assert.equal(app.get('[data-event-field="context"]').value, event.context);
+    for (const page of ["profile", "team", "calibration", "report", "settings"]) {
+        app.click(`[data-nav="${page}"]`);
+        assertNoImportedMarkup(app);
+        assert.ok(app.get("#app").textContent.includes(candidate.formal.founders[0].name) || app.get('[data-founder-name="A"]').value === candidate.formal.founders[0].name);
+        if (page === "report") assert.ok(app.get("#app").textContent.includes(candidate.formal.calibration.founders.A.experiment));
+    }
+    const exported = await app.export();
+    assert.deepEqual(exported, candidate, "Escaping must not change the imported data or its backup");
+});
+
+test("locally typed names and experiment text render literally and keep their original saved values", async () => {
+    const payload = '<img src=x onerror="window.auditInjected=true">';
+    const app = setup();
+    app.click('[data-nav="settings"]');
+    app.input('[data-founder-name="A"]', payload);
+    app.change('[data-founder-name="A"]', payload);
+    app.click('[data-nav="tasks"]');
+    assertNoImportedMarkup(app);
+    assert.ok(app.get('[data-eval="A-A"]').textContent.includes(payload));
+    app.click('[data-nav="calibration"]');
+    app.input('[data-cal-founder="A"] [data-cal-experiment]', payload);
+    app.click('[data-nav="report"]');
+    assertNoImportedMarkup(app);
+    assert.ok(app.get("#app").textContent.includes(payload));
+    const exported = await app.export();
+    assert.equal(exported.formal.founders[0].name, payload);
+    assert.equal(exported.formal.calibration.founders.A.experiment, payload);
 });

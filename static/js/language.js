@@ -61,8 +61,16 @@
         menu.hidden = !open;
     }
 
+    window.addEventListener("pageshow", (event) => {
+        if (!event.persisted) return;
+        const routeLanguage = document.querySelector('meta[name="site-language-route"]')?.content;
+        if (supportedLanguages.has(routeLanguage)) applyLanguage(routeLanguage, true);
+    });
+
     window.addEventListener("DOMContentLoaded", () => {
-        applyLanguage(currentLanguage(), false);
+        // An explicit /en/ or /zh/ visit sets the language for subsequent pages.
+        const routeLanguage = document.querySelector('meta[name="site-language-route"]')?.content;
+        applyLanguage(currentLanguage(), supportedLanguages.has(routeLanguage));
         document.querySelectorAll(".language-toggle").forEach((button) => {
             const picker = button.closest(".language-picker");
             if (picker) {

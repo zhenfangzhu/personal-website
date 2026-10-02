@@ -28,6 +28,11 @@
         window.addEventListener("hashchange", applyFilter);
     }
 
+    // Back/forward cache restores the outgoing DOM, including its faded state.
+    window.addEventListener("pageshow", () => {
+        document.documentElement.classList.remove("dream-is-leaving");
+    });
+
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     function canUseFallback() {
