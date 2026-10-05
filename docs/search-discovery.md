@@ -187,9 +187,9 @@ indexing. No further retries or future automatic submissions were scheduled.
 
 Published search-metadata revision `de8890efb59ada3e67954759075e83c4b8bc125f`:
 
-- The about page now keeps the person's name and university in its title after
-  initial JavaScript loading, language switching, and reloading. Its static,
-  Open Graph, and localized titles agree. English homepage descriptions use
+- This initial revision added the university to the about title. The user later
+  rejected university wording in titles; that title change is superseded by the
+  preference recorded below. English homepage descriptions use
   the university's full name; the Chinese homepage explicitly says the person
   graduated from it. The visible page design and body copy were not changed.
 - Only the four revised profile pages have new sitemap modification dates.
@@ -248,3 +248,15 @@ Founder DNA or Yarrow I Ching can overwrite each other's local state. These were
 reproduced offline; their persistence logic and production database were not
 changed as part of this search-discovery refresh. Founder DNA's skip link also
 lacks its matching main-content target. These findings are not indexing failures.
+
+### Title preference confirmed during this review
+
+The user explicitly wants the homepage search title to remain
+`Zhenfang Zhu | 朱振方`, with no university added to the title. The three homepage
+variants now use that name-only title consistently in HTML, Open Graph, Twitter,
+and both language-switching title values. About titles are `关于朱振方` and
+`About Zhenfang Zhu`; university wording was removed from those titles too.
+Education remains in the visible biography, descriptions, and factual Person
+structured data. Do not add education or promotional keywords to these titles
+as a future search-optimization measure. Search engines still choose their own
+result titles, so a published title cannot guarantee an immediate SERP change.
