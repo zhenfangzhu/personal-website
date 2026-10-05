@@ -182,3 +182,69 @@ application status `2` and displayed `您今日的链接提交量已达上限，
 The repeat was therefore **not accepted**. This does not revoke the original
 submission's success dialog confirmed by the user above, and does not establish
 indexing. No further retries or future automatic submissions were scheduled.
+
+## Review and refresh on 2026-10-06 (Asia/Shanghai)
+
+Published search-metadata revision `de8890efb59ada3e67954759075e83c4b8bc125f`:
+
+- The about page now keeps the person's name and university in its title after
+  initial JavaScript loading, language switching, and reloading. Its static,
+  Open Graph, and localized titles agree. English homepage descriptions use
+  the university's full name; the Chinese homepage explicitly says the person
+  graduated from it. The visible page design and body copy were not changed.
+- Only the four revised profile pages have new sitemap modification dates.
+  All 38 sitemap URLs return HTTP 200 with the intended canonical and no
+  indexing prohibition. Referenced local resources and verification files are
+  reachable. Search/site/identity checks and existing tool regressions pass.
+- [Pages run 37339449403](https://github.com/zhenfangzhu/personal-website/actions/runs/37339449403)
+  succeeded at the revision above. All four live HTML responses and the live
+  sitemap match the local published files.
+- [IndexNow run 37339562548](https://github.com/zhenfangzhu/personal-website/actions/runs/37339562548)
+  automatically ran after Pages at the same SHA. Its log confirms:
+  `IndexNow received 4 URL notifications (HTTP 200); indexing is not confirmed.`
+- Google confirmed `已成功提交站点地图` for the updated sitemap and
+  `已请求编入索引` for the changed about page, adding that URL to its priority
+  crawl queue. The existing about URL was already indexed. The overview reports
+  39 indexed URLs; the sitemap has 38 discovered pages and was last read on
+  2026-10-05 before this resubmission. Those counts do not establish that this
+  revision's new text is indexed. Generative AI Search remains set to include
+  the site through the inherited domain setting.
+- Bing confirmed: `https://zhuzhenfang.com/sitemap.xml is successfully submitted
+  for processing.` Before this resubmission, its sitemap was successful with
+  38 discovered URLs and last crawl 2026-10-03. The AI Performance report still
+  shows 0 citations in its sampled Microsoft Copilots and Partners data through
+  2026-10-03; this is not an all-AI citation count.
+- Baidu's submission trend now confirms 9 manual submissions on 2026-10-03.
+  The user also supplied a later screenshot showing `链接提交成功` for the next
+  manual batch before this review. The current trend has no values yet for
+  2026-10-04 or 2026-10-05; these missing values must not be reported as failures
+  or zero successful submissions. The latest index report shows 1 indexed URL
+  on 2026-10-04. Submission acceptance and indexing remain separate measures.
+- A new Baidu batch has been prepared below. No acceptance receipt for this
+  batch has been obtained yet. Record the actual result after verification;
+  do not describe it as submitted successfully merely because the form is filled.
+- 360, Sogou, and Shenma were checked again and still require account login.
+  No new direct submissions, account registrations, or ownership-verification
+  changes were made for them. Yahoo and DuckDuckGo source relationships and
+  IndexNow participant coverage remain as documented above, not separate receipts.
+
+Prepared Baidu batch (acceptance pending):
+
+```text
+https://zhuzhenfang.com/zh/
+https://zhuzhenfang.com/about/
+https://zhuzhenfang.com/
+https://zhuzhenfang.com/en/
+https://zhuzhenfang.com/echoes/liu-qiangdong-oxon/
+https://zhuzhenfang.com/echoes/zhixing-duanyongping/
+https://zhuzhenfang.com/echoes/ustc-skating-rink/
+https://zhuzhenfang.com/echoes/life-is-catching-a-bus/
+https://zhuzhenfang.com/dreams/
+```
+
+The current audit also identified separate functional follow-ups: concurrent
+public-board saves can overwrite another editor's update, and two open tabs of
+Founder DNA or Yarrow I Ching can overwrite each other's local state. These were
+reproduced offline; their persistence logic and production database were not
+changed as part of this search-discovery refresh. Founder DNA's skip link also
+lacks its matching main-content target. These findings are not indexing failures.
