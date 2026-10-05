@@ -220,15 +220,17 @@ Published search-metadata revision `de8890efb59ada3e67954759075e83c4b8bc125f`:
   2026-10-04 or 2026-10-05; these missing values must not be reported as failures
   or zero successful submissions. The latest index report shows 1 indexed URL
   on 2026-10-04. Submission acceptance and indexing remain separate measures.
-- A new Baidu batch has been prepared below. No acceptance receipt for this
-  batch has been obtained yet. Record the actual result after verification;
-  do not describe it as submitted successfully merely because the form is filled.
+- The user took control of the Baidu page, completed the manual verification,
+  and explicitly reported that it displayed submission success for the new
+  9-URL batch below. This is a user-confirmed acceptance receipt, not an API
+  response independently read by the agent and not evidence of new indexing.
+  Browser control remains with the user; the batch was not submitted again.
 - 360, Sogou, and Shenma were checked again and still require account login.
   No new direct submissions, account registrations, or ownership-verification
   changes were made for them. Yahoo and DuckDuckGo source relationships and
   IndexNow participant coverage remain as documented above, not separate receipts.
 
-Prepared Baidu batch (acceptance pending):
+Baidu batch accepted (success confirmed by the user):
 
 ```text
 https://zhuzhenfang.com/zh/
@@ -260,3 +262,13 @@ Education remains in the visible biography, descriptions, and factual Person
 structured data. Do not add education or promotional keywords to these titles
 as a future search-optimization measure. Search engines still choose their own
 result titles, so a published title cannot guarantee an immediate SERP change.
+
+The final title revision is `0fd07f838ea2c9be2cb12d2f6438c389d24d859d`.
+[Pages run 37340623505](https://github.com/zhenfangzhu/personal-website/actions/runs/37340623505)
+and its automatic
+[IndexNow run 37340742223](https://github.com/zhenfangzhu/personal-website/actions/runs/37340742223)
+both completed successfully at that SHA. All four live HTML responses match
+this revision and contain the requested titles. The final IndexNow run's status
+was verified through the public API; its response body was not independently
+read after the user took browser control. Google/Bing submissions already made
+in this review are retained rather than repeatedly submitting the same URLs.
