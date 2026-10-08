@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN" data-language="zh" class="echoes-site">
+<html lang="zh-CN" data-language="zh" data-language-default="browser" class="echoes-site">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,16 +17,16 @@
     <link rel="icon" type="image/x-icon" href="/static/assets/favicon.ico?v=2026071601">
     <link href="/static/css/home.css?v=2026090302" rel="stylesheet">
     <link href="/static/css/site-language.css?v=2026082701" rel="stylesheet">
-    <script>try{const l=localStorage.getItem('site-language');if(l==='en'||l==='zh'){document.documentElement.dataset.language=l;document.documentElement.lang=l==='zh'?'zh-CN':'en'}}catch(e){}</script>
-    <script defer src="/static/js/site-language.js?v=2026090502"></script>
+    <script>(()=>{let l;try{l=localStorage.getItem('site-language')}catch(e){}if(l!=='en'&&l!=='zh')l=navigator.language.toLowerCase().startsWith('zh')?'zh':'en';document.documentElement.dataset.language=l;document.documentElement.lang=l==='zh'?'zh-CN':'en'})();</script>
+    <script defer src="/static/js/site-language.js?v=2026100901"></script>
     <link rel="stylesheet" href="/static/css/site-chrome.css?v=2026090502">
-    <link rel="stylesheet" href="/static/css/echoes.css?v=2026091209">
+    <link rel="stylesheet" href="/static/css/echoes.css?v=2026100901">
     <script defer src="/static/js/echoes.js?v=2026091204"></script>
     <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     {{STRUCTURED_DATA}}
 </head>
 <body data-title-zh="回声｜朱振方的听后笔记" data-title-en="Echoes | Zhenfang Zhu">
-    <header class="site-chrome"><a class="site-return" href="/"><span data-lang="zh">← 返回个人主页</span><span data-lang="en">← Back to homepage</span></a></header>
+    <header class="site-chrome"><a class="site-return" href="/" data-home-return=""><span data-lang="zh">← 返回个人主页</span><span data-lang="en">← Back to homepage</span></a></header>
     <a class="skip-link" href="#echoes-content"><span data-lang="zh">跳到正文</span><span data-lang="en">Skip to content</span></a>
     <main class="echoes-page" id="echoes-content">
 
@@ -34,6 +34,7 @@
         <header class="echoes-heading">
             <h1><span data-lang="zh">回声</span><span data-lang="en">Echoes</span></h1>
             <p class="echoes-byline"><span data-lang="zh"><a rel="author" href="/about/">朱振方</a>的听后笔记。<br>我听见了一些东西。<br>它们离开以后，留下了这些。</span><span data-lang="en">Listening notes by <a rel="author" href="/about/">Zhenfang Zhu</a>.<br>I heard a few things.<br>After they were gone, this is what stayed.</span></p>
+            <p class="echo-language-note"><span data-lang="zh" lang="zh-CN">笔记以中文写作，部分篇目附英文翻译。</span><span data-lang="en" lang="en">These notes are written in Chinese. Selected entries also have English translations.</span></p>
         </header>
 
         <div class="echoes-tools" hidden>

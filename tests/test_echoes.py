@@ -180,7 +180,8 @@ class EchoesPublicationTests(unittest.TestCase):
                 title = self.assert_one(page.elements("title"), "Each article needs exactly one title")
                 description = self.assert_one(page.elements("meta", name="description"), "Each article needs one description")
                 canonical = self.assert_one(page.elements("link", rel="canonical"), "Each article needs one canonical URL")
-                self.assertEqual(normalized(heading.text()), normalized(entry["title"]))
+                chinese_heading = next((child for child in heading.children if child.attrs.get("data-lang") == "zh"), heading)
+                self.assertEqual(normalized(chinese_heading.text()), normalized(entry["title"]))
                 self.assertIn(entry["title"], title.text())
                 self.assertEqual(description.attrs.get("content"), entry["summary"])
                 self.assertEqual(canonical.attrs.get("href"), self.article_url(entry))
@@ -256,6 +257,26 @@ class EchoesPublicationTests(unittest.TestCase):
                 self.assertEqual(urls.count(self.article_url(entry)), 1)
                 self.assertTrue((ROOT / "echoes" / entry["id"] / "index.html").is_file())
 
+    def test_translation_is_complete_static_content_with_truthful_language_labels(self):
+        translated = [entry for entry in self.published if entry.get("en")]
+        self.assertTrue(translated)
+        for entry in self.published:
+            with self.subTest(entry=entry["id"]):
+                page = self.articles[entry["id"]]
+                translation = entry.get("en")
+                article = next(node for node in page.structured_nodes() if is_type(node, "Article"))
+                if translation:
+                    self.assertEqual(article["inLanguage"], ["zh-CN", "en"])
+                    english_body = next(element for element in page.elements("div", **{"data-lang": "en", "lang": "en"}))
+                    for fragment in self.body_fragments(translation):
+                        self.assertIn(normalized(fragment), normalized(english_body.text()))
+                    self.assertIn(translation["title"], page.elements("h1")[0].text())
+                    self.assertIn("Chinese / English", page.root.text())
+                else:
+                    self.assertEqual(article["inLanguage"], "zh-CN")
+                    self.assertIn("This note is in Chinese.", page.root.text())
+                    self.assertIn("Chinese original", page.root.text())
+
 
 class EchoesSearchIndexTests(unittest.TestCase):
     @classmethod
@@ -325,6 +346,33 @@ class EchoesSearchIndexTests(unittest.TestCase):
         self.assertNotIn("data-search-text", card.attrs)
         self.assertNotIn("Unpublished", card.text(readable=False))
         self.assertNotIn("Private draft", card.text(readable=False))
+
+    def test_english_body_is_searchable_without_becoming_directory_copy(self):
+        for entry in self.entries:
+            if not entry.get("en"):
+                continue
+            page = Page(source=self.builder.render(entry))
+            card, = page.elements("article")
+            for section in entry["en"]["sections"]:
+                for item in section["items"]:
+                    for fragment in filter(None, (item["text"], item.get("note"))):
+                        self.assertIn(fragment, card.attrs["data-search-text"])
+                        self.assertNotIn(normalized(fragment), normalized(card.text()))
+
+    def test_partial_translations_are_rejected_instead_of_hiding_original_content(self):
+        original = next(entry for entry in self.entries if entry.get("en") and any(item.get("note") for section in entry["en"]["sections"] for item in section["items"]))
+        for omit in ("section", "item", "annotation"):
+            with self.subTest(omit=omit):
+                entry = json.loads(json.dumps(original))
+                if omit == "section":
+                    entry["en"]["sections"] = entry["en"]["sections"][:-1]
+                elif omit == "item":
+                    entry["en"]["sections"][0]["items"] = []
+                else:
+                    item = next(item for section in entry["en"]["sections"] for item in section["items"] if item.get("note"))
+                    item["note"] = ""
+                with self.assertRaises(AssertionError):
+                    self.builder.render(entry, standalone=True)
 
 
 if __name__ == "__main__":

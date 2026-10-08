@@ -14,6 +14,9 @@
         } catch (error) {
             // Continue with the page default when storage is unavailable.
         }
+        if (document.documentElement.dataset.languageDefault === "browser") {
+            return navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en";
+        }
         return SUPPORTED.has(document.documentElement.dataset.language)
             ? document.documentElement.dataset.language
             : "zh";
@@ -105,6 +108,10 @@
         document.documentElement.lang = next === "zh" ? "zh-CN" : "en";
         translate();
         updatePicker();
+        document.querySelectorAll("a[data-home-return]").forEach((link) => {
+            const section = link.dataset.homeReturn;
+            link.href = `/${next}/${section ? `#${section}` : ""}`;
+        });
 
         const title = next === "zh" ? document.body?.dataset.titleZh : document.body?.dataset.titleEn;
         if (title) document.title = title;
@@ -142,6 +149,12 @@
     }
 
     window.siteLanguage = { apply: applyLanguage, current: currentLanguage, text, translate };
+
+    window.addEventListener("pageshow", (event) => {
+        if (event.persisted && document.documentElement.dataset.languageDefault === "browser") {
+            applyLanguage(storedLanguage(), false);
+        }
+    });
 
     document.addEventListener("DOMContentLoaded", () => {
         injectPicker();

@@ -68,6 +68,58 @@ test('explicit language routes still load when storage is unavailable', () => {
     assert.equal(homepage('zh/index.html', 'en', true).language, 'zh-CN');
 });
 
+function contentLanguage({ preference, browserLanguage = 'en-US', storageBlocked = false } = {}) {
+    const listeners = new Map();
+    const windowListeners = new Map();
+    const home = { dataset: { homeReturn: '' } };
+    const media = { dataset: { homeReturn: 'media' } };
+    const storage = {
+        getItem() { if (storageBlocked) throw new Error('Unavailable'); return preference; },
+        setItem(key, value) { if (storageBlocked) throw new Error('Unavailable'); preference = value; }
+    };
+    const document = {
+        nodeType: 9,
+        documentElement: { dataset: { language: 'zh', languageDefault: 'browser' } },
+        body: { dataset: {} },
+        querySelector: selector => selector === '.site-language-toggle' ? null : ({}),
+        querySelectorAll: selector => selector === 'a[data-home-return]' ? [home, media] : [],
+        addEventListener: (type, listener) => listeners.set(type, listener)
+    };
+    const window = { localStorage: storage, dispatchEvent() {}, addEventListener: (type, listener) => windowListeners.set(type, listener) };
+    vm.runInNewContext(readFileSync(join(root, 'static/js/site-language.js'), 'utf8'), {
+        document, window, navigator: { language: browserLanguage }, Node: { ELEMENT_NODE: 1 }, CustomEvent: class {}
+    });
+    listeners.get('DOMContentLoaded')();
+    return {
+        home, media, document, switchTo: language => window.siteLanguage.apply(language),
+        restoreAfterPreference(language) { preference = language; windowListeners.get('pageshow')({ persisted: true }); }
+    };
+}
+
+test('content pages retain an explicit homepage language and section when returning', () => {
+    const page = contentLanguage({ preference: 'en', browserLanguage: 'zh-CN' });
+    assert.equal(page.document.documentElement.lang, 'en');
+    assert.equal(page.home.href, '/en/');
+    assert.equal(page.media.href, '/en/#media');
+    page.switchTo('zh');
+    assert.equal(page.home.href, '/zh/');
+    assert.equal(page.media.href, '/zh/#media');
+});
+
+test('direct content visits use browser language without a stored preference, including blocked storage', () => {
+    for (const storageBlocked of [false, true]) {
+        assert.equal(contentLanguage({ storageBlocked }).home.href, '/en/');
+        assert.equal(contentLanguage({ storageBlocked, browserLanguage: 'zh-HK' }).home.href, '/zh/');
+    }
+});
+
+test('restored content pages refresh their return links after the homepage language changes', () => {
+    const page = contentLanguage({ preference: 'en' });
+    page.restoreAfterPreference('zh');
+    assert.equal(page.document.documentElement.lang, 'zh-CN');
+    assert.equal(page.media.href, '/zh/#media');
+});
+
 function dreams({ nativeTransition = false, reducedMotion = false } = {}) {
     const classes = new Set();
     const events = new Map();

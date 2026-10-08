@@ -53,5 +53,57 @@
         }
       ]
     }
-  ]
+  ],
+  "en": {
+    "title": "Life is a race to catch a bus",
+    "summary": "A sprint to catch the No. 166 bus becomes a reflection on talent, goals, effort, and luck: when an opportunity arrives, be there to meet it.",
+    "type": "Life",
+    "source_title": "Wang Defeng: Why does not believing in fate at forty suggest a lack of understanding?",
+    "sections": [
+      {
+        "title": "What happened",
+        "items": [
+          {
+            "text": "Talent — the starting point",
+            "note": "The USTC East Campus bus stop is just outside the northwest gate, very close by."
+          },
+          {
+            "text": "A goal — the motivation",
+            "note": "Without a clear goal, catching the No. 166 bus, I would not have started running."
+          },
+          {
+            "text": "Effort — the process",
+            "note": "I planned to buy a piece of clothing at Decathlon in the Intime shopping mall. After finishing my work at the East Campus 1958 café, I saw that the bus was only one minute and two stops away.\nSince my work was already done, I chose to start running immediately rather than wait twenty minutes for the next bus."
+          },
+          {
+            "text": "Luck — the variable",
+            "note": "The light at the campus gate happened to be green, while the No. 166 bus was waiting at a red light at the intersection."
+          }
+        ]
+      },
+      {
+        "title": "The central thought",
+        "kind": "quotation",
+        "items": [
+          {
+            "text": "If I had not run as hard as I could, that perfectly timed green light would have meant nothing to me. It would have turned red, just as it always did.",
+            "note": ""
+          }
+        ]
+      },
+      {
+        "title": "",
+        "items": [
+          {
+            "text": "Luck is a shortcut for people already on their way, not a reserved seat for those watching from the sidelines.",
+            "note": ""
+          },
+          {
+            "text": "Luck gives you an opportunity at a particular moment; effort makes sure that, at that moment, you are there.",
+            "note": ""
+          }
+        ]
+      }
+    ]
+  }
 }

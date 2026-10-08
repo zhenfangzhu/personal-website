@@ -32,6 +32,8 @@
 .echo-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
 .echo-date { color: var(--nav); font-size: 12px; font-variant-numeric: tabular-nums; line-height: 1.5; }
 .echo-tag { color: var(--nav); font-size: 12px; line-height: 1.6; }
+.echo-language-note { margin: 20px 0 0; color: var(--nav); font-size: 12px; line-height: 1.9; }
+.echo-standalone .echo-language-note { margin-bottom: 24px; }
 .echo-title { margin: 0; color: var(--ink); font-size: 18px; font-weight: 400; line-height: 1.8; letter-spacing: .015em; overflow-wrap: anywhere; }
 .echo-section { margin: 0 0 48px; }
 .echo-section:last-child { margin-bottom: 0; }

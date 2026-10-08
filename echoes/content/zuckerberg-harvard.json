@@ -91,5 +91,95 @@
         }
       ]
     }
-  ]
+  ],
+  "en": {
+    "title": "Zuckerberg’s Harvard commencement speech",
+    "summary": "Notes on purpose, action, and collaboration, with reflections on the direction of Redding as a product.",
+    "type": "Video",
+    "source_title": "Mark Zuckerberg’s Harvard commencement speech",
+    "sections": [
+      {
+        "title": "",
+        "items": [
+          {
+            "text": "“The greatest achievements often come from the courage to fail. If you spend too long preparing, you never get to start.”",
+            "note": ""
+          }
+        ]
+      },
+      {
+        "title": "Purpose beyond personal goals",
+        "items": [
+          {
+            "text": "The deeper logic of kindness",
+            "note": "On his first day at Harvard, Zuckerberg wore his clothes inside out, but no one told him. KX Gin was the exception: he did not mind and invited Zuckerberg to work together. He later became a key figure at Facebook. This is more than an anecdote. Before success arrives, simple kindness and collaboration can help shape how far you eventually go."
+          },
+          {
+            "text": "An “excuse” for a date",
+            "note": "Even the prospect of being expelled could become a romantic opening to ask someone out. This is extreme optimism: nothing is entirely bad; what matters is how you frame it and use it to move forward."
+          },
+          {
+            "text": "From a personal goal to shared purpose",
+            "note": "Finding your own purpose is only the beginning. The real challenge is helping everyone find meaning in life. Beyond creating jobs, we need to renew society’s sense of purpose. This is the highest responsibility of leaders today."
+          }
+        ]
+      },
+      {
+        "title": "Taking action amid misunderstanding and imperfection",
+        "items": [
+          {
+            "text": "You are the person who can make the idea real",
+            "note": "When an idea that could change the world seems clear to you, do not wait for someone else to appear. You are the one who can make it happen. Zuckerberg’s original dream was to create an impact, rather than to start a company."
+          },
+          {
+            "text": "Avoid the trap of waiting for a perfect idea",
+            "note": "No one knows everything at the beginning, and ideas do not arrive fully formed. If fear of misunderstanding, criticism, or mistakes stops you, you can only watch the status quo continue."
+          },
+          {
+            "text": "The price of being ahead of your time",
+            "note": "People with ambitious dreams are often called crazy. Those tackling complex problems blame themselves for not understanding everything, and those who move quickly are criticized. None of this should stop us: whatever we do today will inevitably face problems in the future."
+          }
+        ]
+      },
+      {
+        "title": "Systems that reshape the conditions of life",
+        "items": [
+          {
+            "text": "Reverse the logic: invest in prevention rather than treatment",
+            "note": "Society currently spends more than fifty times as much on treatment as on research into cures. That makes little sense. Reversing this investment so that people do not become ill in the first place would be real progress."
+          },
+          {
+            "text": "A personalized revolution in education and democracy",
+            "note": "Modernize democracy through online voting and personalize education. Alongside basic education, the “water” of education, help everyone develop their talents and passions, the “fire” of education."
+          },
+          {
+            "text": "A cushion for failure",
+            "note": "J.K. Rowling was rejected twelve times before publishing Harry Potter, and Beyoncé wrote hundreds of songs before Halo. Success should be measured by how many people have meaningful roles. We should discuss ideas such as universal basic income (UBI) to give everyone the freedom to try new things."
+          }
+        ]
+      },
+      {
+        "title": "Connection from communities to global collaboration",
+        "items": [
+          {
+            "text": "The direction of history",
+            "note": "World history has moved toward collaboration at greater scales: from tribes to city-states to nations. Today’s major opportunities are global. They require us to work beyond ourselves to achieve something significant."
+          },
+          {
+            "text": "Change begins close to home",
+            "note": "Our ability to seize the biggest opportunities depends on our ability to build communities and create a world together. People should find purpose through their connections to communities as well as through their work."
+          }
+        ]
+      },
+      {
+        "title": "A question to consider",
+        "items": [
+          {
+            "text": "How can Redding help people gain knowledge while also nurturing the “fire” within them? Perhaps giving life meaning is a central principle underlying the next generation of internet products.",
+            "note": ""
+          }
+        ]
+      }
+    ]
+  }
 }

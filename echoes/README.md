@@ -47,3 +47,9 @@
 分节 `title` 可留空或省略，正文会直接呈现；不要添加“手记”等占位标题。
 
 构建依赖 Pillow 和中文字体。此机器可使用 `/Users/hitler/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3` 执行上述命令；其他环境安装 Pillow，并用 `ECHO_COVER_FONT` 指定中文 TTF/TTC 字体。封面生成器在 `scripts/build_echo_covers.py`。`--check` 会验证主题页、所有独立页、封面和站点地图。
+
+## 英文翻译
+
+正文保留中文原文。可选的 `en` 对象包含英文 `title`、`summary`、`type`、`source_title` 和 `sections`。英文分节与中文原文一一对应，保留各节标题、`kind`、每条 `text` 和非空 `note`，构建时检查完整性。来源网址仍使用原文的 `source`，`source_title` 只翻译链接文字。
+
+有完整翻译的笔记标注「中英双语」，标题、摘要和正文随界面语言切换；没有翻译的笔记标注「中文原文」，英文界面明确提示正文仍为中文。两种语言都以静态 HTML 保留，英文正文也进入搜索索引。直接访问目录或文章时使用已保存的语言偏好，无偏好时使用浏览器语言。

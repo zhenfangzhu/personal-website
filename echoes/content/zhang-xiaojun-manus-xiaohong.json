@@ -22,5 +22,26 @@
   ],
   "source_short": "张小珺Jùn · EP.95 · 小宇宙",
   "rating": 5,
-  "summary": "如何围绕大模型的技术突破寻找应用机会：关于产品核心功能、生态平台与分发的两段思考。"
+  "summary": "如何围绕大模型的技术突破寻找应用机会：关于产品核心功能、生态平台与分发的两段思考。",
+  "en": {
+    "title": "Zhang Xiaojun in conversation with Manus CEO Xiao Hong",
+    "summary": "Finding application opportunities around breakthroughs in large language models: two thoughts on core product features, ecosystems, and distribution.",
+    "type": "Podcast",
+    "source_title": "Zhang Xiaojun Jùn · Business Interviews, EP.95: The world is not a linear extrapolation; become an important variable in the game",
+    "sections": [
+      {
+        "title": "",
+        "items": [
+          {
+            "text": "Our capabilities and resources are not enough to develop a large language model ourselves. Instead, we can make a bet on the direction of future breakthroughs by model providers and use that to anchor the core features of the app we build.",
+            "note": ""
+          },
+          {
+            "text": "Look for a “Wandoujia window” in the era of large language models: prepare a third-party ecosystem platform aligned with future model breakthroughs, and get an early start in distributing and servicing apps and related applications.",
+            "note": ""
+          }
+        ]
+      }
+    ]
+  }
 }
