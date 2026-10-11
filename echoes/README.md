@@ -1,6 +1,6 @@
 # 回声内容维护
 
-每篇笔记是 `content/` 下的一个 JSON 文件。页面由 `template.html` 和共享样式生成，不要直接编辑 `index.html`。
+每篇笔记是 `content/` 下的一个 JSON 文件。页面由 `_template.html` 和共享样式生成，不要直接编辑 `index.html`。模板以下划线开头，GitHub Pages 的默认 Jekyll 发布流程不会将它发布为网页；请保留这一命名约定。
 
 ## 新增或补全文本
 

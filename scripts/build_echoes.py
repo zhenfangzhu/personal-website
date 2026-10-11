@@ -210,7 +210,7 @@ def build(check=False):
     ids = [entry['id'] for entry in entries]
     assert len(ids) == len(set(ids)), 'Duplicate ids'
     entries.sort(key=lambda entry: entry['date'], reverse=True)
-    template = (ROOT / 'echoes/template.html').read_text()
+    template = (ROOT / 'echoes/_template.html').read_text()
     result = template.replace('{{ENTRIES}}', '\n'.join(render(entry) for entry in entries)).replace('{{STRUCTURED_DATA}}', collection_data(entries))
     output = ROOT / 'echoes/index.html'
     from build_echo_covers import cover

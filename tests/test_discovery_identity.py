@@ -70,7 +70,7 @@ class EchoesAttributionTests(unittest.TestCase):
         cls.builder = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(cls.builder)
         cls.entries = [json.loads(path.read_text()) for path in (ROOT / 'echoes/content').glob('*.json')]
-        cls.template = (ROOT / 'echoes/template.html').read_text()
+        cls.template = (ROOT / 'echoes/_template.html').read_text()
 
     def test_published_notes_distinguish_the_compiler_from_the_original_content(self):
         for entry in self.entries:
