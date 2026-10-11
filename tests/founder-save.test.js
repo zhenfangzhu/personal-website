@@ -155,6 +155,8 @@ class MemoryElement {
         else this.emit("click");
     }
     focus() { this.ownerDocument.activeElement = this; }
+    showModal() { assert.equal(this.tagName, "DIALOG"); this.modalShown = true; this.setAttribute("open", ""); }
+    close() { this.modalShown = false; this.removeAttribute("open"); }
     scrollIntoView() {}
 }
 
@@ -242,6 +244,56 @@ function setup(options = {}) {
 }
 
 function storageError(name) { const error = new Error(name); error.name = name; return error; }
+
+test("welcome uses a native modal, keeps setup open on Escape, and focuses the project field", () => {
+    const app = setup({ storedValue: null });
+    const welcome = app.get("#welcome");
+    assert.equal(welcome.tagName, "DIALOG");
+    assert.equal(welcome.modalShown, true);
+    assert.equal(app.document.activeElement, app.get("#welcome-project"));
+    assert.equal(welcome.emit("cancel").defaultPrevented, true);
+    assert.equal(welcome.modalShown, true);
+});
+
+test("both welcome completion paths close the modal and focus the rendered main content", () => {
+    for (const mode of ["formal", "demo"]) {
+        const app = setup({ storedValue: null });
+        const welcome = app.get("#welcome");
+        if (mode === "formal") {
+            app.input("#welcome-project", "Focus test");
+            app.input("#welcome-founder-a", "Alice");
+            app.input("#welcome-founder-b", "Bob");
+            app.input("#welcome-founder-c", "Carol");
+        }
+        app.click(`[data-welcome="${mode}"]`);
+        assert.equal(welcome.modalShown, false);
+        assert.equal(app.document.querySelector("#welcome"), null);
+        assert.equal(app.document.activeElement, app.get("#main-content"));
+        assert.equal(JSON.parse(app.storage.value).activeMode, mode);
+    }
+});
+
+test("welcome loops Tab in both directions and recalculates controls after membership changes", () => {
+    const app = setup({ storedValue: null });
+    const welcome = app.get("#welcome");
+    const first = app.get("#welcome-project");
+    const last = app.get('[data-welcome="demo"]');
+    assert.equal(welcome.emit("keydown", { key: "Tab", shiftKey: true }).defaultPrevented, true);
+    assert.equal(app.document.activeElement, last);
+    assert.equal(welcome.emit("keydown", { key: "Tab" }).defaultPrevented, true);
+    assert.equal(app.document.activeElement, first);
+    app.click('[data-welcome-add]');
+    app.click('[data-founder-id="D"] [data-welcome-remove]');
+    app.get("#file-import").focus();
+    welcome.emit("keydown", { key: "Tab" });
+    assert.equal(app.document.activeElement, first);
+    app.click('[data-founder-id="C"] [data-welcome-remove]');
+    const disabled = app.get('[data-founder-id="B"] [data-welcome-remove]');
+    assert.equal(disabled.disabled, true);
+    disabled.focus();
+    welcome.emit("keydown", { key: "Tab", shiftKey: true });
+    assert.equal(app.document.activeElement, last);
+});
 
 test.before(async () => {
     const app = setup({ storedValue: null });
