@@ -1,5 +1,11 @@
 # Website work
 
+## Scope and user review
+
+- Work in this project is limited to the personal website, https://zhuzhenfang.com. Do not modify or publish the research website, https://anthesis.ac.cn; the user manages it in a separate folder and chat. Do not extend personal-website work to GitHub profile content, company websites, or other projects without an explicit new request.
+- Prepare requested changes locally, validate them, and show the user the actual changes for review before pushing or publishing. Wait for the user's explicit confirmation of those changes. Approval for a previous batch does not authorize publishing later changes, and a request to edit does not by itself authorize a push.
+- Once the user confirms the reviewed changes for publication, complete the commit, push, and live verification for that approved scope.
+
 ## Project context
 
 - This is the static website at https://zhuzhenfang.com, published from `main` through GitHub Pages. Keep the existing stack and visual language for ordinary changes.
