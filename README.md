@@ -2,11 +2,11 @@
 
 **个人网站 · Personal website**
 
-[zhuzhenfang.com](https://zhuzhenfang.com/) · [Anthesis 研究网站](https://anthesis.ac.cn/) · [GitHub](https://github.com/zhenfangzhu)
+[zhuzhenfang.com](https://zhuzhenfang.com/) · [Anthesis · anthesis.ac.cn](https://anthesis.ac.cn/) · [GitHub](https://github.com/zhenfangzhu)
 
-我是朱振方，本科毕业于中国科学技术大学，Redding AI 联合创始人。我在这里记录自述、随笔与阅读笔记。我也关注 AI Agent、人的自主权，以及人与 AI 的长期共同成长，相关研究与思考整理在 [Anthesis](https://anthesis.ac.cn/)。
+我是朱振方，本科毕业于中国科学技术大学，Redding AI 联合创始人。我在这里记录自述、随笔与阅读笔记。我也关注 AI Agent、人的自主权，以及人与 AI 的长期共同成长，相关研究与思考整理在 [Anthesis（anthesis.ac.cn）](https://anthesis.ac.cn/)。
 
-I am Zhenfang Zhu, a graduate of the University of Science and Technology of China and a co-founder of Redding AI. I share my autobiographical writing, essays, and reading notes on this personal website. I collect my research and reflections on AI agents, human agency, and long-term human–AI growth at [Anthesis](https://anthesis.ac.cn/en/).
+I am Zhenfang Zhu, a co-founder of Redding AI. I earned my bachelor’s degree from the University of Science and Technology of China (USTC). I share my autobiographical writing, essays, and reading notes on this personal website. I collect my research and reflections on AI agents, human agency, and long-term human–AI growth at [Anthesis (anthesis.ac.cn)](https://anthesis.ac.cn/en/).
 
 ## 阅读入口 / Read
 
@@ -47,4 +47,4 @@ For the notes publishing workflow, see [echoes/README.md](echoes/README.md). Edi
 
 If you find a website issue, a broken link, or text that needs correction, please let me know by opening an issue with the relevant URL.
 
-[Email](mailto:zhuzhenfang@ustc.edu) · [GitHub](https://github.com/zhenfangzhu) · [Anthesis](https://anthesis.ac.cn/)
+[Email](mailto:zhuzhenfang@ustc.edu) · [GitHub](https://github.com/zhenfangzhu) · [Anthesis（anthesis.ac.cn）](https://anthesis.ac.cn/)
