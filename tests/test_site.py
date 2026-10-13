@@ -204,8 +204,9 @@ class SiteContractTests(unittest.TestCase):
         self.assertNotIn("Xavier", read("index.html") + about)
         self.assertIn("Redding AI", read("index.html"))
         self.assertIn("联合创始人", read("index.html"))
-        self.assertIn("AI 创业者", about)
-        self.assertRegex(about, r'"jobTitle": \[[^\]]*"AI Entrepreneur"[^\]]*"Software Engineer"[^\]]*\]')
+        self.assertIn('<p class="profile-role" data-lang="zh">Redding AI 联创 | AI Agent研究者</p>', about)
+        self.assertIn('<p class="profile-role" data-lang="en">Redding AI Co-founder | AI Agent Researcher</p>', about)
+        self.assertRegex(about, r'"jobTitle": \["Co-founder of Redding AI", "AI Agent researcher"\]')
 
     def test_homepage_search_titles_and_metadata_match_each_language(self):
         index = read("index.html")
@@ -809,7 +810,8 @@ class SiteContractTests(unittest.TestCase):
         self.assertRegex(css, r"\.home-visual\s*\{[^}]*grid-column:\s*2")
         self.assertIn("minmax(320px, 469px)", css)
         self.assertIn("height: min(760px", css)
-        self.assertIn("margin-top: 134px", css)
+        # The portrait starts alongside the name, without the former top offset.
+        self.assertRegex(css, r"\.home-visual\s*\{[^}]*grid-row:\s*1\s*;[^}]*margin-top:\s*0\s*;")
         self.assertIn("object-fit: cover", css)
         self.assertIn("object-position: 70% center", css)
         self.assertIn("border-radius: 8px", css)

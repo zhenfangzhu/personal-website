@@ -44,7 +44,9 @@ class DiscoveryIdentityTests(unittest.TestCase):
         english, = [element for element in paragraphs if element.attrs.get('data-lang') == 'en']
         for fact in ['朱振方', 'Zhenfang Zhu', 'Redding AI', '联合创始人', '中国科学技术大学', '理学学士']:
             self.assertIn(fact, chinese.text())
-        for fact in ['Zhenfang Zhu', '朱振方', 'co-founder', 'Bachelor of Science',
+        self.assertTrue(chinese.text().startswith('我是朱振方'))
+        self.assertTrue(english.text().startswith('I am Zhenfang Zhu'))
+        for fact in ['Zhenfang Zhu', 'co-founder', 'Bachelor of Science',
                      'University of Science and Technology of China']:
             self.assertIn(fact, english.text())
         works, = page.elements('section', **{'aria-labelledby': 'works-title'})
