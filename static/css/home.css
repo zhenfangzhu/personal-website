@@ -480,6 +480,23 @@ html[data-language="zh"] .bio-view-panel [data-lang="zh"] {
     line-height: 1.45;
 }
 
+.research-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.85rem;
+    margin-bottom: 0.3rem;
+}
+
+.research-domain {
+    color: var(--nav);
+    font-family: var(--ui-font);
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.035em;
+    white-space: nowrap;
+}
+
 .education-row time,
 .row-meta {
     color: var(--nav);
@@ -651,7 +668,7 @@ a.index-row {
         width: 100%;
         height: min(760px, calc(100svh - var(--page-pad) - var(--page-pad) - 134px));
         min-height: min(62svh, 680px);
-        margin-top: 134px;
+        margin-top: 0;
         overflow: hidden;
         border-radius: 8px;
     }
