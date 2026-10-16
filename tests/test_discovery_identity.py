@@ -52,9 +52,10 @@ class DiscoveryIdentityTests(unittest.TestCase):
         works, = page.elements('section', **{'aria-labelledby': 'works-title'})
         work_links = [element.attrs.get('href') for element in works.walk() if element.tag == 'a']
         self.assertCountEqual(work_links, ['/founder-dna/', '/shicao/', '/board/'])
-        sources, = page.elements('section', **{'aria-labelledby': 'public-sources-title'})
-        source_links = [element.attrs.get('href') for element in sources.walk() if element.tag == 'a']
-        self.assertCountEqual(source_links, [COMPANY_ABOUT, 'https://github.com/zhenfangzhu'])
+        self.assertFalse(page.elements('section', **{'aria-labelledby': 'public-sources-title'}))
+        links = [element.attrs.get('href') for element in page.elements('a')]
+        self.assertIn(COMPANY_URL, links)
+        self.assertIn('https://github.com/zhenfangzhu', links)
 
     def test_tools_credit_the_same_person_as_the_profiles(self):
         for relative in ['founder-dna/index.html', 'shicao/index.html', 'board/index.html']:
